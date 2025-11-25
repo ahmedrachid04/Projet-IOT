@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Historique des mesures</title>
+  <style>
+    body { font-family: Arial; text-align: center; margin-top: 50px; }
+    table { margin: auto; border-collapse: collapse; width: 50%; }
+    th, td { border: 1px solid #333; padding: 8px; }
+    th { background-color: #ddd; }
+    a { display: block; margin-top: 20px; text-decoration: none; color: blue; }
+  </style>
+</head>
+<body>
+  <h2>10 dernières mesures</h2>
+  <table>
+    <tr><th>Température (°C)</th><th>Humidité (%)</th></tr>
+    {% for m in mesures %}
+    <tr>
+      <td>{{ m.temperature }}</td>
+      <td>{{ m.humidity }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+
+  <a href="/">Retour à la page principale</a>
+</body>
+</html>

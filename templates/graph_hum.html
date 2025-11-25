@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Graphique Humidité - DHT11</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
     <link rel="stylesheet" href="/static/css/graph.css">
 </head>
 <body>
@@ -13,6 +14,35 @@
             <a href="/" class="btn-back">← Retour au Dashboard</a>
             <h1>💧 Historique de l'Humidité</h1>
         </header>
+
+        <div class="filters">
+            <button class="filter-btn active" data-period="all">Toutes les données</button>
+            <button class="filter-btn" data-period="jour">24 heures</button>
+            <button class="filter-btn" data-period="semaine">7 jours</button>
+            <button class="filter-btn" data-period="mois">30 jours</button>
+            <button class="filter-btn" data-period="custom">Personnalisé</button>
+        </div>
+
+        <div class="date-picker-container" id="datePickerContainer" style="display: none;">
+            <div class="date-picker-wrapper">
+                <div class="date-input-group">
+                    <label for="startDate">Date de début:</label>
+                    <input type="datetime-local" id="startDate" class="date-input">
+                </div>
+                <div class="date-input-group">
+                    <label for="endDate">Date de fin:</label>
+                    <input type="datetime-local" id="endDate" class="date-input">
+                </div>
+                <button class="btn-apply-dates" onclick="applyCustomDates()">Appliquer</button>
+            </div>
+        </div>
+
+        <div class="zoom-controls">
+            <button class="zoom-btn" onclick="resetZoom()" title="Réinitialiser le zoom">
+                🔍 Réinitialiser
+            </button>
+            <span class="zoom-info">💡 Utilisez la molette de la souris pour zoomer, cliquez-glissez pour vous déplacer</span>
+        </div>
 
         <div class="chart-container">
             <canvas id="humChart"></canvas>
@@ -35,13 +65,6 @@
                 <span class="stat-label">Humidité max</span>
                 <span class="stat-value" id="max-hum">--%</span>
             </div>
-        </div>
-
-        <div class="filters">
-            <button class="filter-btn active" data-period="all">Toutes les données</button>
-            <button class="filter-btn" data-period="jour">24 heures</button>
-            <button class="filter-btn" data-period="semaine">7 jours</button>
-            <button class="filter-btn" data-period="mois">30 jours</button>
         </div>
 
         <footer>

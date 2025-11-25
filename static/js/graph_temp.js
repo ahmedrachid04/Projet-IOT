@@ -1,49 +1,129 @@
-// Variables globales
-let chart = null;
+let tempChart = null;
 let currentPeriod = 'all';
+let allData = null;
 
-// Fonction pour obtenir l'URL selon la période
-function getApiUrl(period) {
-    const urls = {
-        'all': '/chart-data/',
-        'jour': '/chart-data-jour/',
-        'semaine': '/chart-data-semaine/',
-        'mois': '/chart-data-mois/'
-    };
-    return urls[period] || urls['all'];
+// Chart.js default colors for dark theme
+Chart.defaults.color = '#e0e0e0';
+Chart.defaults.borderColor = '#3a3a3a';
+
+// Get URL based on period
+function getUrl(period) {
+    switch(period) {
+        case 'jour': return '/chart-data-jour/';
+        case 'semaine': return '/chart-data-semaine/';
+        case 'mois': return '/chart-data-mois/';
+        default: return '/chart-data/';
+    }
 }
 
-// Fonction pour calculer les statistiques
-function calculateStats(temperatures) {
-    if (temperatures.length === 0) return null;
+// Load temperature data
+async function loadData(period) {
+    currentPeriod = period;
 
-    const current = temperatures[temperatures.length - 1];
-    const sum = temperatures.reduce((a, b) => a + b, 0);
-    const avg = sum / temperatures.length;
-    const min = Math.min(...temperatures);
-    const max = Math.max(...temperatures);
+    // Update active button
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.period === period) {
+            btn.classList.add('active');
+        }
+    });
 
-    return { current, avg, min, max };
+    // Show/hide date picker
+    if (period === 'custom') {
+        document.getElementById('datePickerContainer').style.display = 'block';
+        return;
+    } else {
+        document.getElementById('datePickerContainer').style.display = 'none';
+    }
+
+    try {
+        const response = await fetch(getUrl(period));
+        const data = await response.json();
+
+        if (data.temperature && data.temperature.length > 0) {
+            allData = data;
+            updateChart(data);
+            updateStats(data);
+            document.getElementById('data-count').textContent =
+                `${data.temperature.length} mesures affichées`;
+        } else {
+            document.getElementById('data-count').textContent =
+                'Aucune donnée disponible pour cette période';
+        }
+    } catch (error) {
+        console.error('Erreur lors du chargement des données:', error);
+        document.getElementById('data-count').textContent =
+            'Erreur lors du chargement des données';
+    }
 }
 
-// Fonction pour mettre à jour les statistiques
-function updateStats(stats) {
-    if (!stats) return;
+// Apply custom date range
+async function applyCustomDates() {
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
 
-    document.getElementById('current-temp').textContent = `${stats.current.toFixed(1)}°C`;
-    document.getElementById('avg-temp').textContent = `${stats.avg.toFixed(1)}°C`;
-    document.getElementById('min-temp').textContent = `${stats.min.toFixed(1)}°C`;
-    document.getElementById('max-temp').textContent = `${stats.max.toFixed(1)}°C`;
+    if (!startDate || !endDate) {
+        alert('Veuillez sélectionner une date de début et de fin');
+        return;
+    }
+
+    const startTime = new Date(startDate).getTime();
+    const endTime = new Date(endDate).getTime();
+
+    if (startTime >= endTime) {
+        alert('La date de début doit être avant la date de fin');
+        return;
+    }
+
+    try {
+        // Load all data and filter by date
+        const response = await fetch('/chart-data/');
+        const data = await response.json();
+
+        // Filter data by date range
+        const filteredData = {
+            temps: [],
+            temperature: [],
+            humidity: []
+        };
+
+        for (let i = 0; i < data.temps.length; i++) {
+            const dataTime = new Date(data.temps[i]).getTime();
+            if (dataTime >= startTime && dataTime <= endTime) {
+                filteredData.temps.push(data.temps[i]);
+                filteredData.temperature.push(data.temperature[i]);
+                filteredData.humidity.push(data.humidity[i]);
+            }
+        }
+
+        if (filteredData.temperature.length > 0) {
+            allData = filteredData;
+            updateChart(filteredData);
+            updateStats(filteredData);
+            document.getElementById('data-count').textContent =
+                `${filteredData.temperature.length} mesures affichées`;
+        } else {
+            alert('Aucune donnée trouvée pour cette période');
+        }
+
+    } catch (error) {
+        console.error('Erreur:', error);
+        alert('Erreur lors du chargement des données');
+    }
 }
 
-// Fonction pour créer/mettre à jour le graphique
-function createChart(data) {
-    const ctx = document.getElementById('tempChart').getContext('2d');
+// Reset zoom
+function resetZoom() {
+    if (tempChart) {
+        tempChart.resetZoom();
+    }
+}
 
-    // Formater les labels de date
+// Update chart
+function updateChart(data) {
     const labels = data.temps.map(t => {
         const date = new Date(t);
-        return date.toLocaleDateString('fr-FR', {
+        return date.toLocaleString('fr-FR', {
             day: '2-digit',
             month: '2-digit',
             hour: '2-digit',
@@ -51,29 +131,29 @@ function createChart(data) {
         });
     });
 
-    // Détruire l'ancien graphique s'il existe
-    if (chart) {
-        chart.destroy();
+    // Destroy existing chart
+    if (tempChart) {
+        tempChart.destroy();
     }
 
-    // Créer le nouveau graphique
-    chart = new Chart(ctx, {
+    const ctx = document.getElementById('tempChart').getContext('2d');
+    tempChart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: labels,
             datasets: [{
                 label: 'Température (°C)',
                 data: data.temperature,
-                borderColor: '#ffffff',
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                borderWidth: 2,
+                borderColor: '#ff6b6b',
+                backgroundColor: 'rgba(255, 107, 107, 0.1)',
                 tension: 0.4,
                 fill: true,
-                pointRadius: 3,
-                pointHoverRadius: 6,
-                pointBackgroundColor: '#ffffff',
-                pointBorderColor: '#1a1a1a',
-                pointBorderWidth: 2
+                borderWidth: 2,
+                pointRadius: 4,
+                pointBackgroundColor: '#ff6b6b',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointHoverRadius: 6
             }]
         },
         options: {
@@ -84,112 +164,145 @@ function createChart(data) {
                     display: true,
                     position: 'top',
                     labels: {
-                        color: '#ffffff',
+                        color: '#e0e0e0',
                         font: {
                             size: 14,
                             weight: 'bold'
-                        }
+                        },
+                        padding: 20
                     }
                 },
                 title: {
                     display: true,
-                    text: 'Évolution de la température',
-                    color: '#ffffff',
+                    text: 'Température au fil du temps',
+                    color: '#fff',
                     font: {
-                        size: 18,
+                        size: 20,
                         weight: 'bold'
+                    },
+                    padding: 20
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    borderColor: '#ff6b6b',
+                    borderWidth: 1,
+                    padding: 12,
+                    displayColors: true,
+                    callbacks: {
+                        label: function(context) {
+                            return 'Température: ' + context.parsed.y.toFixed(1) + '°C';
+                        }
+                    }
+                },
+                zoom: {
+                    zoom: {
+                        wheel: {
+                            enabled: true,
+                            speed: 0.1
+                        },
+                        pinch: {
+                            enabled: true
+                        },
+                        mode: 'x'
+                    },
+                    pan: {
+                        enabled: true,
+                        mode: 'x'
+                    },
+                    limits: {
+                        x: {min: 'original', max: 'original'}
                     }
                 }
             },
             scales: {
                 y: {
                     beginAtZero: false,
-                    ticks: {
-                        color: '#b0b0b0',
-                        callback: function(value) {
-                            return value + '°C';
-                        }
-                    },
-                    grid: {
-                        color: 'rgba(255, 255, 255, 0.1)'
-                    },
                     title: {
                         display: true,
                         text: 'Température (°C)',
-                        color: '#ffffff',
+                        color: '#e0e0e0',
                         font: {
+                            size: 14,
                             weight: 'bold'
                         }
+                    },
+                    ticks: {
+                        color: '#e0e0e0',
+                        font: {
+                            size: 12
+                        },
+                        callback: function(value) {
+                            return value.toFixed(1) + '°C';
+                        }
+                    },
+                    grid: {
+                        color: '#3a3a3a',
+                        drawBorder: false
                     }
                 },
                 x: {
+                    title: {
+                        display: true,
+                        text: 'Date et Heure',
+                        color: '#e0e0e0',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    },
                     ticks: {
-                        color: '#b0b0b0',
+                        color: '#e0e0e0',
+                        font: {
+                            size: 11
+                        },
                         maxRotation: 45,
                         minRotation: 45
                     },
                     grid: {
-                        color: 'rgba(255, 255, 255, 0.05)'
-                    },
-                    title: {
-                        display: true,
-                        text: 'Date et heure',
-                        color: '#ffffff',
-                        font: {
-                            weight: 'bold'
-                        }
+                        color: '#3a3a3a',
+                        drawBorder: false
                     }
                 }
             }
         }
     });
-
-    // Mettre à jour les statistiques
-    const stats = calculateStats(data.temperature);
-    updateStats(stats);
-
-    // Mettre à jour le compteur
-    document.getElementById('data-count').textContent =
-        `${data.temperature.length} mesure${data.temperature.length > 1 ? 's' : ''} affichée${data.temperature.length > 1 ? 's' : ''}`;
 }
 
-// Fonction pour charger les données
-async function loadData(period = 'all') {
-    try {
-        currentPeriod = period;
-        const url = getApiUrl(period);
+// Update statistics
+function updateStats(data) {
+    const temps = data.temperature;
 
-        const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error('Erreur de chargement');
-        }
+    if (temps.length > 0) {
+        const current = temps[temps.length - 1];
+        const avg = temps.reduce((a, b) => a + b, 0) / temps.length;
+        const min = Math.min(...temps);
+        const max = Math.max(...temps);
 
-        const data = await response.json();
-        createChart(data);
-
-    } catch (error) {
-        console.error('Erreur:', error);
-        document.getElementById('data-count').textContent = 'Erreur de chargement des données';
+        document.getElementById('current-temp').textContent = current.toFixed(1) + '°C';
+        document.getElementById('avg-temp').textContent = avg.toFixed(1) + '°C';
+        document.getElementById('min-temp').textContent = min.toFixed(1) + '°C';
+        document.getElementById('max-temp').textContent = max.toFixed(1) + '°C';
     }
 }
 
-// Gestionnaires d'événements pour les filtres
-document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-        // Retirer la classe active de tous les boutons
-        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-
-        // Ajouter la classe active au bouton cliqué
-        this.classList.add('active');
-
-        // Charger les données pour la période sélectionnée
-        const period = this.dataset.period;
-        loadData(period);
+// Setup event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Filter buttons
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            loadData(this.dataset.period);
+        });
     });
+
+    // Set default date values
+    const now = new Date();
+    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+    document.getElementById('endDate').value = now.toISOString().slice(0, 16);
+    document.getElementById('startDate').value = yesterday.toISOString().slice(0, 16);
+
+    // Load initial data
+    loadData('all');
 });
-
-// Charger les données au démarrage
-loadData('all');
-
-// Log pour debug
-console.log('Graphique température initialisé');

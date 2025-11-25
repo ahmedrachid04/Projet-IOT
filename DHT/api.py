@@ -1,11 +1,12 @@
 from django.core.mail import send_mail
 from DHT.utils import send_telegram, send_whatsapp
-from .models import Dht11
+from .models import Dht11, Incident
 from .serializers import DHT11serialize
 from rest_framework.decorators import api_view
 from rest_framework import status, generics
 from rest_framework.response import Response
 from django.conf import settings
+from django.utils import timezone
 
 
 @api_view(['GET'])
@@ -31,13 +32,21 @@ class Dhtviews(generics.CreateAPIView):
         temp = instance.temp
         hum = instance.hum
 
-        # Seuil d'alerte (à ajuster selon vos besoins)
+        # Seuil d'alerte
         SEUIL_TEMPERATURE = 25
+        incident_actif = Incident.objects.filter(actif=True).first()
 
         # Si la température dépasse le seuil
         if temp > SEUIL_TEMPERATURE:
-            # Message d'alerte
-            message = f"Alerte Température élevée!\nTempérature: {temp:.1f}°C\nHumidité: {hum:.1f}%\nDate: {instance.dt.strftime('%d/%m/%Y %H:%M:%S')}"
+            if not incident_actif:
+                # Créer nouvel incident
+                incident_actif = Incident.objects.create(compteur=1)
+            else:
+                # Incrémenter compteur
+                incident_actif.compteur += 1
+                incident_actif.save()
+
+            message = f"⚠️ Alerte Température élevée!\nTempérature: {temp:.1f}°C\nHumidité: {hum:.1f}%\nCompteur incidents: {incident_actif.compteur}"
 
             # 1) Envoi Email
             try:
@@ -48,20 +57,28 @@ class Dhtviews(generics.CreateAPIView):
                     recipient_list=["imanejennane23@gmail.com"],
                     fail_silently=False,
                 )
-                print("Email envoyé avec succès")
+                print("✅ Email envoyé avec succès")
             except Exception as e:
-                print(f"Erreur lors de l'envoi de l'email: {e}")
+                print(f"❌ Erreur lors de l'envoi de l'email: {e}")
 
             # 2) Envoi Telegram
             try:
                 send_telegram(message)
-                print("Message Telegram envoyé avec succès")
+                print("✅ Message Telegram envoyé avec succès")
             except Exception as e:
-                print(f"Erreur lors de l'envoi du message Telegram: {e}")
+                print(f"❌ Erreur lors de l'envoi du message Telegram: {e}")
 
             # 3) Envoi WhatsApp
             try:
                 send_whatsapp(message)
-                print("Message WhatsApp envoyé avec succès")
+                print("✅ Message WhatsApp envoyé avec succès")
             except Exception as e:
-                print(f" Erreur lors de l'envoi du message WhatsApp: {e}")
+                print(f"❌ Erreur lors de l'envoi du message WhatsApp: {e}")
+
+        else:
+            # Température normale - fermer l'incident si actif
+            if incident_actif:
+                incident_actif.actif = False
+                incident_actif.date_fin = timezone.now()
+                incident_actif.save()
+                print(f"✅ Incident {incident_actif.id} fermé - Température normale")
