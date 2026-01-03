@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Administration{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <h2 class="mb-4">Panneau d'Administration</h2>
+
+            <!-- Navigation Tabs -->
+            <ul class="nav nav-tabs" id="adminTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard" type="button" role="tab">Tableau de Bord</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="operateurs-tab" data-bs-toggle="tab" data-bs-target="#operateurs" type="button" role="tab">Gestion Opérateurs</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="thresholds-tab" data-bs-toggle="tab" data-bs-target="#thresholds" type="button" role="tab">Seuils Température</button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="adminTabContent">
+                <!-- Dashboard Tab -->
+                <div class="tab-pane fade show active" id="dashboard" role="tabpanel">
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5>Statistiques</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="card bg-primary text-white">
+                                        <div class="card-body">
+                                            <h5>{{ operateurs|length }}</h5>
+                                            <p>Opérateurs actifs</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card bg-success text-white">
+                                        <div class="card-body">
+                                            <h5>{{ threshold.min_temp }}°C - {{ threshold.max_temp }}°C</h5>
+                                            <p>Seuils température</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card bg-warning text-white">
+                                        <div class="card-body">
+                                            <h5>0</h5>
+                                            <p>Incidents actifs</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Opérateurs Tab -->
+                <div class="tab-pane fade" id="operateurs" role="tabpanel">
+                    <div class="card mt-3">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5>Gestion des Opérateurs</h5>
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createOperateurModal">
+                                <i class="fas fa-plus"></i> Nouveau Opérateur
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Nom d'utilisateur</th>
+                                            <th>Nom complet</th>
+                                            <th>Rôle</th>
+                                            <th>Téléphone</th>
+                                            <th>Email</th>
+                                            <th>Statut</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for operateur in operateurs %}
+                                        <tr>
+                                            <td>{{ operateur.user.username }}</td>
+                                            <td>{{ operateur.full_name|default:"-" }}</td>
+                                            <td>
+                                                <span class="badge bg-{% if operateur.role == 'operateur1' %}primary{% elif operateur.role == 'operateur2' %}success{% else %}info{% endif %}">
+                                                    {{ operateur.get_role_display }}
+                                                </span>
+                                            </td>
+                                            <td>{{ operateur.phone_number|default:"-" }}</td>
+                                            <td>{{ operateur.email|default:"-" }}</td>
+                                            <td>
+                                                {% if operateur.user.is_active %}
+                                                    <span class="badge bg-success">Actif</span>
+                                                {% else %}
+                                                    <span class="badge bg-danger">Inactif</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-primary" onclick="editOperateur({{ operateur.user.id }})">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-danger" onclick="deleteOperateur({{ operateur.user.id }})">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Thresholds Tab -->
+                <div class="tab-pane fade" id="thresholds" role="tabpanel">
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5>Configuration des Seuils de Température</h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="post" action="{% url 'admin_panel' %}?action=update_thresholds">
+                                {% csrf_token %}
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="min_temp" class="form-label">Température Minimale (°C)</label>
+                                            <input type="number" step="0.1" class="form-control" id="min_temp" name="min_temp"
+                                                   value="{{ threshold.min_temp }}" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="max_temp" class="form-label">Température Maximale (°C)</label>
+                                            <input type="number" step="0.1" class="form-control" id="max_temp" name="max_temp"
+                                                   value="{{ threshold.max_temp }}" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-save"></i> Enregistrer
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Operateur Modal -->
+<div class="modal fade" id="createOperateurModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Créer un Nouvel Opérateur</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'admin_panel' %}?action=create_operateur">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Nom d'utilisateur</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Mot de passe</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email">
+                    </div>
+                    <div class="mb-3">
+                        <label for="full_name" class="form-label">Nom complet</label>
+                        <input type="text" class="form-control" id="full_name" name="full_name">
+                    </div>
+                    <div class="mb-3">
+                        <label for="phone_number" class="form-label">Téléphone</label>
+                        <input type="text" class="form-control" id="phone_number" name="phone_number">
+                    </div>
+                    <div class="mb-3">
+                        <label for="role" class="form-label">Rôle</label>
+                        <select class="form-control" id="role" name="role" required>
+                            {% for role_value, role_display in ROLE_CHOICES %}
+                                {% if role_value != 'admin' %}
+                                <option value="{{ role_value }}">{{ role_display }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Créer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// JavaScript for admin panel functionality
+function editOperateur(userId) {
+    // TODO: Implement edit functionality
+    alert('Fonctionnalité d\'édition à implémenter');
+}
+
+function deleteOperateur(userId) {
+    if (confirm('Êtes-vous sûr de vouloir supprimer cet opérateur ?')) {
+        // TODO: Implement delete functionality
+        alert('Fonctionnalité de suppression à implémenter');
+    }
+}
+
+// Auto-select tab based on URL parameter
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const action = urlParams.get('action');
+
+    if (action) {
+        const tabMap = {
+            'create_operateur': 'operateurs-tab',
+            'update_thresholds': 'thresholds-tab'
+        };
+
+        const tabId = tabMap[action];
+        if (tabId) {
+            const tab = document.getElementById(tabId);
+            const tabContent = document.querySelector(`#${tabId.replace('-tab', '')}`);
+
+            // Remove active class from all tabs
+            document.querySelectorAll('.nav-link').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(t => t.classList.remove('show', 'active'));
+
+            // Add active class to target tab
+            tab.classList.add('active');
+            tabContent.classList.add('show', 'active');
+        }
+    }
+});
+</script>
+
+<style>
+.nav-tabs .nav-link {
+    border: 1px solid #dee2e6;
+    border-bottom: none;
+}
+
+.nav-tabs .nav-link.active {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+.tab-content {
+    border: 1px solid #dee2e6;
+    border-top: none;
+    padding: 20px;
+}
+
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+</style>
+{% endblock %}

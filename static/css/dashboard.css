@@ -291,6 +291,7 @@ body.light-mode .input-group label {
     color: #555;
 }
 
+/* FIXED: Removed pointer-events, cursor, and user-select that were blocking input */
 .input-group input {
     width: 100%;
     padding: 0.8rem;
@@ -299,9 +300,6 @@ body.light-mode .input-group label {
     border-radius: 6px;
     color: #e0e0e0;
     font-size: 1rem;
-    pointer-events: auto !important;
-    cursor: text !important;
-    user-select: text !important;
 }
 
 body.light-mode .input-group input {
@@ -314,6 +312,11 @@ body.light-mode .input-group input {
     outline: none;
     border-color: #666;
     box-shadow: 0 0 5px rgba(102, 102, 102, 0.5);
+}
+
+body.light-mode .input-group input:focus {
+    border-color: #3498db;
+    box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
 }
 
 .btn-submit-manual {
@@ -332,6 +335,10 @@ body.light-mode .input-group input {
 .btn-submit-manual:hover {
     background: #5a8c5a;
     transform: translateY(-2px);
+}
+
+.btn-submit-manual:active {
+    transform: translateY(0);
 }
 
 /* ==================== INCIDENT SECTION ==================== */

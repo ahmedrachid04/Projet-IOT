@@ -26,8 +26,6 @@ SECRET_KEY = 'django-insecure-_42oe4&wkls(d-f^_x+u#27sob6b(@tdkj#p+-aofkf6!9nc89
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
-
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -121,12 +119,11 @@ import os
 STATICFILES_DIRS = [ BASE_DIR / 'static' ]
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
+STATIC_ROOT = os.path.join(BASE_DIR,'staticfiles')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 import os
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),]
-STATIC_ROOT=os.path.join(BASE_DIR,'staticfiles')
+
 from django.core.mail import send_mail
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
@@ -166,3 +163,17 @@ MQTT_TOPIC_PUBLISH = "dht11/alerts"     # Topic to publish alerts
 # Optional: MQTT Authentication (uncomment if broker requires auth)
 # MQTT_USERNAME = "your_username"
 # MQTT_PASSWORD = "your_password"
+
+# Authentication settings
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/login/'
+
+# Session settings
+SESSION_COOKIE_AGE = 86400  # 24 hours in seconds
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'dashboard'
+LOGOUT_REDIRECT_URL = 'login'

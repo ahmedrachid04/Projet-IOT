@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Opérateurs - Admin</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <style>
+        .admin-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            color: #fff;
+        }
+
+        .btn-add {
+            padding: 12px 24px;
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-add:hover {
+            background: #229954;
+            transform: translateY(-2px);
+        }
+
+        .operateurs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .operateur-card {
+            background: #2a2a2a;
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid #3a3a3a;
+            transition: all 0.3s;
+        }
+
+        body.light-mode .operateur-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+        }
+
+        .operateur-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .operateur-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 1rem;
+        }
+
+        .operateur-role {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #3498db;
+            color: white;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .operateur-name {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 0.5rem;
+        }
+
+        body.light-mode .operateur-name {
+            color: #2c3e50;
+        }
+
+        .operateur-username {
+            color: #888;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .operateur-info {
+            margin: 1rem 0;
+        }
+
+        .info-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            color: #b0b0b0;
+            font-size: 0.9rem;
+        }
+
+        body.light-mode .info-row {
+            color: #555;
+        }
+
+        .operateur-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #3a3a3a;
+        }
+
+        body.light-mode .operateur-actions {
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .btn-edit, .btn-delete {
+            flex: 1;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-edit {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background: #2980b9;
+        }
+
+        .btn-delete {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #c0392b;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #2a2a2a;
+            border-radius: 15px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        body.light-mode .modal-content {
+            background: white;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            color: #fff;
+        }
+
+        body.light-mode .modal-title {
+            color: #2c3e50;
+        }
+
+        .btn-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #888;
+            cursor: pointer;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            color: #b0b0b0;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        body.light-mode .form-group label {
+            color: #555;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            background: #1a1a1a;
+            border: 1px solid #3a3a3a;
+            border-radius: 8px;
+            color: #e0e0e0;
+            font-size: 1rem;
+        }
+
+        body.light-mode .form-group input,
+        body.light-mode .form-group select {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            color: #2c3e50;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 12px;
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-submit:hover {
+            background: #229954;
+        }
+
+        .btn-back {
+            display: inline-block;
+            margin-bottom: 1rem;
+            padding: 10px 20px;
+            background: #444;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+
+        .btn-back:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="/" class="logo">📊 Dashboard IoT</a>
+            <ul class="nav-links">
+                <li><a href="/">Dashboard</a></li>
+                <li><a href="/admin/operateurs/">Opérateurs</a></li>
+                <li><a href="/profile/">Profil ({{ user.username }})</a></li>
+                <li><a href="/logout/">Déconnexion</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="admin-container">
+        <a href="/" class="btn-back">← Retour au Dashboard</a>
+
+        <div class="page-header">
+            <h1 class="page-title">👥 Gestion des Opérateurs</h1>
+            <button class="btn-add" onclick="openCreateModal()">
+                ➕ Nouvel Opérateur
+            </button>
+        </div>
+
+        <div class="operateurs-grid">
+            {% for op in operateurs %}
+            <div class="operateur-card">
+                <div class="operateur-header">
+                    <div>
+                        <div class="operateur-name">{{ op.full_name|default:op.username }}</div>
+                        <div class="operateur-username">@{{ op.username }}</div>
+                    </div>
+                    <span class="operateur-role">{{ op.get_role_display }}</span>
+                </div>
+
+                <div class="operateur-info">
+                    <div class="info-row">
+                        <span>📧</span>
+                        <span>{{ op.email|default:"Non renseigné" }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span>📱</span>
+                        <span>{{ op.phone_number|default:"Non renseigné" }}</span>
+                    </div>
+                </div>
+
+                <div class="operateur-actions">
+                    <button class="btn-edit" onclick="openEditModal({{ op.id }}, '{{ op.username }}', '{{ op.full_name }}', '{{ op.email }}', '{{ op.phone_number }}', '{{ op.role }}')">
+                        ✏️ Modifier
+                    </button>
+                    <button class="btn-delete" onclick="deleteOperateur({{ op.id }}, '{{ op.username }}')">
+                        🗑️ Supprimer
+                    </button>
+                </div>
+            </div>
+            {% empty %}
+            <p style="color: #888; text-align: center; grid-column: 1/-1;">
+                Aucun opérateur créé. Cliquez sur "Nouvel Opérateur" pour commencer.
+            </p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Create Modal -->
+    <div id="createModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Créer un Opérateur</h2>
+                <button class="btn-close" onclick="closeModal('createModal')">✕</button>
+            </div>
+            <form id="createForm">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label>Nom complet *</label>
+                    <input type="text" name="full_name" required>
+                </div>
+                <div class="form-group">
+                    <label>Nom d'utilisateur *</label>
+                    <input type="text" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email">
+                </div>
+                <div class="form-group">
+                    <label>Téléphone</label>
+                    <input type="tel" name="phone_number">
+                </div>
+                <div class="form-group">
+                    <label>Rôle *</label>
+                    <select name="role" required>
+                        <option value="operateur1">Opérateur 1</option>
+                        <option value="operateur2">Opérateur 2</option>
+                        <option value="operateur3">Opérateur 3</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Mot de passe *</label>
+                    <input type="password" name="password" required>
+                </div>
+                <button type="submit" class="btn-submit">Créer l'opérateur</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Modifier l'Opérateur</h2>
+                <button class="btn-close" onclick="closeModal('editModal')">✕</button>
+            </div>
+            <form id="editForm">
+                {% csrf_token %}
+                <input type="hidden" name="user_id" id="edit_user_id">
+                <div class="form-group">
+                    <label>Nom complet</label>
+                    <input type="text" name="full_name" id="edit_full_name">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" id="edit_email">
+                </div>
+                <div class="form-group">
+                    <label>Téléphone</label>
+                    <input type="tel" name="phone_number" id="edit_phone_number">
+                </div>
+                <div class="form-group">
+                    <label>Nouveau mot de passe (laisser vide pour ne pas changer)</label>
+                    <input type="password" name="password" id="edit_password">
+                </div>
+                <button type="submit" class="btn-submit">Mettre à jour</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function openCreateModal() {
+            document.getElementById('createModal').classList.add('active');
+        }
+
+        function openEditModal(id, username, fullName, email, phone, role) {
+            document.getElementById('edit_user_id').value = id;
+            document.getElementById('edit_full_name').value = fullName;
+            document.getElementById('edit_email').value = email;
+            document.getElementById('edit_phone_number').value = phone;
+            document.getElementById('editModal').classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        document.getElementById('createForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+
+            try {
+                const response = await fetch('/admin/operateurs/create/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('✅ ' + result.message);
+                    location.reload();
+                } else {
+                    alert('❌ ' + result.error);
+                }
+            } catch (error) {
+                alert('❌ Erreur: ' + error.message);
+            }
+        });
+
+        document.getElementById('editForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+            const userId = data.user_id;
+            delete data.user_id;
+
+            try {
+                const response = await fetch(`/admin/operateurs/${userId}/update/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('✅ ' + result.message);
+                    location.reload();
+                } else {
+                    alert('❌ ' + result.error);
+                }
+            } catch (error) {
+                alert('❌ Erreur: ' + error.message);
+            }
+        });
+
+        async function deleteOperateur(userId, username) {
+            if (!confirm(`Êtes-vous sûr de vouloir supprimer l'opérateur "${username}" ?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/admin/operateurs/${userId}/delete/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('✅ ' + result.message);
+                    location.reload();
+                } else {
+                    alert('❌ ' + result.error);
+                }
+            } catch (error) {
+                alert('❌ Erreur: ' + error.message);
+            }
+        }
+
+        // Close modal when clicking outside
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Détail Incident {{ incident.id }} - DHT11</title>
+    <link rel="stylesheet" href="/static/css/archive.css">
+    <style>
+        .detail-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .detail-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .detail-header h1 {
+            margin: 0;
+            font-size: 2.5em;
+        }
+
+        .detail-header .meta {
+            margin-top: 10px;
+            opacity: 0.9;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .detail-card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .detail-card h3 {
+            color: #333;
+            margin-top: 0;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: bold;
+            color: #555;
+        }
+
+        .info-value {
+            color: #333;
+        }
+
+        .operation-section {
+            margin-bottom: 25px;
+        }
+
+        .operation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .operation-name {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .status-badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        .status-completed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-pending {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .operation-details {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .comment-section {
+            margin-top: 20px;
+        }
+
+        .comment {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .comment-author {
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .comment-date {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .back-btn {
+            display: inline-block;
+            background: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            transition: background 0.3s;
+        }
+
+        .back-btn:hover {
+            background: #5a6268;
+        }
+
+        @media (max-width: 768px) {
+            .detail-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .detail-header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="detail-container">
+        <a href="/archive-incidents/" class="back-btn">← Retour à l'archive</a>
+
+        <div class="detail-header">
+            <h1>Incident #{{ incident.id }}</h1>
+            <div class="meta">
+                Du {{ incident.date_debut|date:"d/m/Y H:i" }} au {{ incident.date_fin|date:"d/m/Y H:i" }}
+            </div>
+        </div>
+
+        <div class="detail-grid">
+            <div class="detail-card">
+                <h3>📊 Informations Générales</h3>
+                <div class="info-row">
+                    <span class="info-label">Compteur:</span>
+                    <span class="info-value">{{ incident.compteur }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Statut:</span>
+                    <span class="info-value">{{ incident.get_status_display }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Température:</span>
+                    <span class="info-value">{% if incident.temperature %}{{ incident.temperature }}°C{% else %}N/A{% endif %}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Humidité:</span>
+                    <span class="info-value">{% if incident.humidity %}{{ incident.humidity }}%{% else %}N/A{% endif %}</span>
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <h3>🔧 Opérations Correctives</h3>
+
+                <div class="operation-section">
+                    <div class="operation-header">
+                        <span class="operation-name">{{ incident.nom_op1 }}</span>
+                        <span class="status-badge {% if incident.op1_checked %}status-completed{% else %}status-pending{% endif %}">
+                            {% if incident.op1_checked %}Terminée{% else %}En attente{% endif %}
+                        </span>
+                    </div>
+                    {% if incident.op1_comment %}
+                    <div class="operation-details">
+                        <strong>Commentaire:</strong> {{ incident.op1_comment }}
+                    </div>
+                    {% endif %}
+                    {% if incident.op1_operateur_name %}
+                    <div class="operation-details">
+                        <strong>Opérateur:</strong> {{ incident.op1_operateur_name }}<br>
+                        <strong>Date:</strong> {{ incident.op1_date|date:"d/m/Y H:i" }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="operation-section">
+                    <div class="operation-header">
+                        <span class="operation-name">{{ incident.nom_op2 }}</span>
+                        <span class="status-badge {% if incident.op2_checked %}status-completed{% else %}status-pending{% endif %}">
+                            {% if incident.op2_checked %}Terminée{% else %}En attente{% endif %}
+                        </span>
+                    </div>
+                    {% if incident.op2_comment %}
+                    <div class="operation-details">
+                        <strong>Commentaire:</strong> {{ incident.op2_comment }}
+                    </div>
+                    {% endif %}
+                    {% if incident.op2_operateur_name %}
+                    <div class="operation-details">
+                        <strong>Opérateur:</strong> {{ incident.op2_operateur_name }}<br>
+                        <strong>Date:</strong> {{ incident.op2_date|date:"d/m/Y H:i" }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="operation-section">
+                    <div class="operation-header">
+                        <span class="operation-name">{{ incident.nom_op3 }}</span>
+                        <span class="status-badge {% if incident.op3_checked %}status-completed{% else %}status-pending{% endif %}">
+                            {% if incident.op3_checked %}Terminée{% else %}En attente{% endif %}
+                        </span>
+                    </div>
+                    {% if incident.op3_comment %}
+                    <div class="operation-details">
+                        <strong>Commentaire:</strong> {{ incident.op3_comment }}
+                    </div>
+                    {% endif %}
+                    {% if incident.op3_operateur_name %}
+                    <div class="operation-details">
+                        <strong>Opérateur:</strong> {{ incident.op3_operateur_name }}<br>
+                        <strong>Date:</strong> {{ incident.op3_date|date:"d/m/Y H:i" }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
