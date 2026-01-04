@@ -3,7 +3,7 @@ from django.utils import timezone
 from .models import Dht11, Incident, IncidentComment, ArchiveIncident, UserProfile, TemperatureThreshold
 import csv
 from .serializers import DHT11serialize
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -26,20 +26,6 @@ def get_user_role(user):
     if hasattr(user, 'profile'):
         return user.profile.role
     return 'visiteur'
-
-
-def getCookie(name):
-    """Get CSRF cookie"""
-    import re
-    cookieValue = None
-    if document.cookie and document.cookie != '':
-        cookies = document.cookie.split(';')
-        for cookie in cookies:
-            cookie = cookie.strip()
-            if cookie.startswith(name + '='):
-                cookieValue = cookie[len(name) + 1:]
-                break
-    return cookieValue
 
 
 # ==================== AUTHENTICATION ====================
@@ -190,16 +176,159 @@ def chart_data_mois(request):
     return JsonResponse(data)
 
 
-# ==================== INCIDENT MANAGEMENT ====================
+# ==================== MANUAL DATA ENTRY - FIXED ====================
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def manual_data_entry(request):
+    """Entrée manuelle de données - FIXED LOGIC"""
+    try:
+        data = json.loads(request.body)
+        temperature = float(data.get('temp', 0))
+        humidity = float(data.get('hum', 0))
+
+        print(f"\n{'=' * 60}")
+        print(f"📊 MANUAL ENTRY: Temp={temperature}°C, Hum={humidity}%")
+
+        # Créer l'entrée DHT11
+        dht_entry = Dht11.objects.create(temp=temperature, hum=humidity)
+
+        # Get temperature thresholds
+        threshold = TemperatureThreshold.objects.first()
+        if not threshold:
+            threshold = TemperatureThreshold.objects.create(min_temp=2.0, max_temp=8.0)
+
+        min_temp = threshold.min_temp
+        max_temp = threshold.max_temp
+
+        print(f"🎯 THRESHOLDS: Min={min_temp}°C, Max={max_temp}°C")
+
+        # Chercher incident actif
+        incident = Incident.objects.filter(actif=True).first()
+        now = timezone.now()
+
+        # Check if temperature is OUTSIDE the normal range (ABNORMAL)
+        is_abnormal = (temperature < min_temp) or (temperature > max_temp)
+
+        print(f"🔍 Check: {temperature}°C is {'ABNORMAL' if is_abnormal else 'NORMAL'}")
+
+        if is_abnormal:
+            # TEMPERATURE ABNORMAL - CREATE OR INCREMENT
+            print(f"🚨 ABNORMAL - Creating/incrementing incident")
+
+            if incident:
+                # Incrémenter compteur jusqu'à 9
+                if incident.compteur < 9:
+                    if (not incident.last_increment) or ((now - incident.last_increment).total_seconds() >= 10):
+                        incident.compteur += 1
+                        incident.last_increment = now
+                        incident.temperature = temperature
+                        incident.humidity = humidity
+                        incident.save()
+                        print(f"✅ Incremented to {incident.compteur}/9")
+            else:
+                # Créer nouvel incident
+                incident = Incident.objects.create(
+                    actif=True,
+                    compteur=1,
+                    date_debut=now,
+                    last_increment=now,
+                    temperature=temperature,
+                    humidity=humidity,
+                    status='en_cours'
+                )
+                print(f"✅ New incident created ID={incident.id}")
+
+            message = f"⚠️ Alerte!\nTemp: {temperature:.1f}°C (range: {min_temp}-{max_temp}°C)\nHum: {humidity:.1f}%\nCompteur: {incident.compteur}/9"
+
+            try:
+                send_mail(
+                    subject="Alerte Température",
+                    message=message,
+                    from_email=settings.EMAIL_HOST_USER,
+                    recipient_list=["imanejennane23@gmail.com"],
+                    fail_silently=False,
+                )
+            except Exception as e:
+                print(f"Email error: {e}")
+
+            try:
+                send_telegram(message)
+            except Exception as e:
+                print(f"Telegram error: {e}")
+
+            try:
+                send_whatsapp(message)
+            except Exception as e:
+                print(f"WhatsApp error: {e}")
+
+        else:
+            # TEMPERATURE NORMAL - CLOSE INCIDENT
+            print(f"✅ NORMAL - Closing incident if exists")
+
+            if incident:
+                # Archiver
+                ArchiveIncident.objects.create(
+                    date_debut=incident.date_debut,
+                    date_fin=now,
+                    compteur=incident.compteur,
+                    status='termine',
+                    temperature=incident.temperature,
+                    humidity=incident.humidity,
+                    nom_op1=incident.nom_op1,
+                    op1_checked=incident.op1_checked,
+                    op1_comment=incident.op1_comment or '',
+                    op1_operateur_name=incident.op1_operateur.username if incident.op1_operateur else '',
+                    op1_date=incident.op1_date,
+                    nom_op2=incident.nom_op2,
+                    op2_checked=incident.op2_checked,
+                    op2_comment=incident.op2_comment or '',
+                    op2_operateur_name=incident.op2_operateur.username if incident.op2_operateur else '',
+                    op2_date=incident.op2_date,
+                    nom_op3=incident.nom_op3,
+                    op3_checked=incident.op3_checked,
+                    op3_comment=incident.op3_comment or '',
+                    op3_operateur_name=incident.op3_operateur.username if incident.op3_operateur else '',
+                    op3_date=incident.op3_date,
+                )
+
+                # Fermer
+                incident.actif = False
+                incident.date_fin = now
+                incident.status = 'termine'
+                incident.last_increment = None
+                incident.save()
+
+                print(f"✅ Incident #{incident.id} closed and archived")
+
+        print(f"{'=' * 60}\n")
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Données enregistrées avec succès',
+            'id': dht_entry.id,
+            'temperature': temperature,
+            'humidity': humidity
+        })
+
+    except ValueError:
+        return JsonResponse({'success': False, 'error': 'Valeurs invalides'}, status=400)
+    except Exception as e:
+        print(f"Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+# ==================== INCIDENT STATUS ====================
 
 @login_required
 def incident_status(request):
-    """API - Statut incident actuel avec permissions"""
+    """API - Statut incident actuel"""
     incident = Incident.objects.filter(actif=True).first()
 
     user_role = get_user_role(request.user)
 
-    # Check permissions based on role
     can_edit_op1 = user_role in ['admin', 'operateur1']
     can_edit_op2 = user_role in ['admin', 'operateur2']
     can_edit_op3 = user_role in ['admin', 'operateur3']
@@ -216,6 +345,7 @@ def incident_status(request):
 
         return JsonResponse({
             "incident_actif": True,
+            "id": incident.id,
             "compteur": incident.compteur,
             "date_debut": incident.date_debut.isoformat(),
             "temperature": incident.temperature,
@@ -223,14 +353,17 @@ def incident_status(request):
             "accuse_reception": incident.accuse_reception,
             "accuse_reception_operateur": incident.accuse_reception_operateur.username if incident.accuse_reception_operateur else None,
             "accuse_reception_date": incident.accuse_reception_date.isoformat() if incident.accuse_reception_date else None,
+            "nom_op1": incident.nom_op1,
             "op1_checked": incident.op1_checked,
             "op1_comment": incident.op1_comment or "",
             "op1_operateur": incident.op1_operateur.username if incident.op1_operateur else None,
             "op1_date": incident.op1_date.isoformat() if incident.op1_date else None,
+            "nom_op2": incident.nom_op2,
             "op2_checked": incident.op2_checked,
             "op2_comment": incident.op2_comment or "",
             "op2_operateur": incident.op2_operateur.username if incident.op2_operateur else None,
             "op2_date": incident.op2_date.isoformat() if incident.op2_date else None,
+            "nom_op3": incident.nom_op3,
             "op3_checked": incident.op3_checked,
             "op3_comment": incident.op3_comment or "",
             "op3_operateur": incident.op3_operateur.username if incident.op3_operateur else None,
@@ -264,7 +397,7 @@ def incident_status(request):
 @csrf_exempt
 @require_http_methods(["POST"])
 def update_incident(request):
-    """API - Mettre à jour incident avec vérification des permissions"""
+    """API - Mettre à jour incident"""
     incident = Incident.objects.filter(actif=True).first()
     if not incident:
         return JsonResponse({"error": "Aucun incident actif"}, status=400)
@@ -276,7 +409,6 @@ def update_incident(request):
     except json.JSONDecodeError:
         return JsonResponse({"error": "Invalid JSON"}, status=400)
 
-    # Check permissions for accusé de réception
     if 'accuse_reception' in data:
         if user_role == 'visiteur':
             return JsonResponse({"error": "Permission refusée"}, status=403)
@@ -285,11 +417,9 @@ def update_incident(request):
             incident.accuse_reception_operateur = request.user
             incident.accuse_reception_date = timezone.now()
 
-    # Check permissions for each operation
     if 'op1_checked' in data or 'op1_comment' in data:
         if user_role not in ['admin', 'operateur1']:
             return JsonResponse({"error": "Permission refusée pour op1"}, status=403)
-
         if 'op1_checked' in data:
             incident.op1_checked = data['op1_checked']
             if data['op1_checked']:
@@ -301,7 +431,6 @@ def update_incident(request):
     if 'op2_checked' in data or 'op2_comment' in data:
         if user_role not in ['admin', 'operateur2']:
             return JsonResponse({"error": "Permission refusée pour op2"}, status=403)
-
         if 'op2_checked' in data:
             incident.op2_checked = data['op2_checked']
             if data['op2_checked']:
@@ -313,7 +442,6 @@ def update_incident(request):
     if 'op3_checked' in data or 'op3_comment' in data:
         if user_role not in ['admin', 'operateur3']:
             return JsonResponse({"error": "Permission refusée pour op3"}, status=403)
-
         if 'op3_checked' in data:
             incident.op3_checked = data['op3_checked']
             if data['op3_checked']:
@@ -330,7 +458,7 @@ def update_incident(request):
 @csrf_exempt
 @require_http_methods(["POST"])
 def add_incident_comment(request, incident_id):
-    """Ajouter un commentaire à un incident"""
+    """Ajouter un commentaire"""
     user_role = get_user_role(request.user)
 
     if user_role == 'visiteur':
@@ -402,7 +530,7 @@ def check_create_incident(request):
                 incident = Incident.objects.create(
                     actif=True,
                     compteur=1,
-                    date_debut=timezone.now(),
+                    date_debut=now,
                     last_increment=now,
                     temperature=temperature
                 )
@@ -436,146 +564,53 @@ def check_create_incident(request):
         return JsonResponse({'error': str(e)}, status=500)
 
 
-@csrf_exempt
-@require_http_methods(["POST"])
-def manual_data_entry(request):
-    """Entrée manuelle de données avec gestion d'incidents"""
-    try:
-        data = json.loads(request.body)
-        temperature = float(data.get('temp', 0))
-        humidity = float(data.get('hum', 0))
-
-        if humidity < 0 or humidity > 100:
-            return JsonResponse({
-                'success': False,
-                'error': 'L\'humidité doit être entre 0 et 100%'
-            }, status=400)
-
-        dht_entry = Dht11.objects.create(temp=temperature, hum=humidity)
-
-        threshold = TemperatureThreshold.objects.first()
-        if not threshold:
-            threshold = TemperatureThreshold.objects.create(min_temp=2.0, max_temp=8.0)
-
-        min_temp = threshold.min_temp
-        max_temp = threshold.max_temp
-
-        if temperature < min_temp or temperature > max_temp:
-            now = timezone.now()
-            incident = Incident.objects.filter(actif=True).first()
-
-            if incident:
-                if incident.compteur < 9:
-                    if (not incident.last_increment) or ((now - incident.last_increment).total_seconds() >= 10):
-                        incident.compteur += 1
-                        incident.last_increment = now
-                        incident.save()
-            else:
-                incident = Incident.objects.create(
-                    actif=True,
-                    compteur=1,
-                    date_debut=timezone.now(),
-                    last_increment=now,
-                    temperature=temperature,
-                    humidity=humidity
-                )
-
-            message = f"⚠️ Alerte Température anormale!\nTempérature: {temperature:.1f}°C\nHumidité: {humidity:.1f}%\nCompteur incidents: {incident.compteur}"
-
-            try:
-                send_mail(
-                    subject="Alerte Température - Entrée Manuelle",
-                    message=message,
-                    from_email=settings.EMAIL_HOST_USER,
-                    recipient_list=["imanejennane23@gmail.com"],
-                    fail_silently=False,
-                )
-            except Exception as e:
-                print(f"Erreur email: {e}")
-
-            try:
-                send_telegram(message)
-            except Exception as e:
-                print(f"Erreur Telegram: {e}")
-
-            try:
-                send_whatsapp(message)
-            except Exception as e:
-                print(f"Erreur WhatsApp: {e}")
-
-        else:
-            incident = Incident.objects.filter(actif=True).first()
-            if incident:
-                ArchiveIncident.objects.create(
-                    date_debut=incident.date_debut,
-                    date_fin=timezone.now(),
-                    compteur=incident.compteur,
-                    temperature=incident.temperature,
-                    humidity=incident.humidity,
-                    nom_op1=incident.nom_op1,
-                    op1_checked=incident.op1_checked,
-                    op1_comment=incident.op1_comment,
-                    op1_operateur_name=incident.op1_operateur.username if incident.op1_operateur else '',
-                    op1_date=incident.op1_date,
-                    nom_op2=incident.nom_op2,
-                    op2_checked=incident.op2_checked,
-                    op2_comment=incident.op2_comment,
-                    op2_operateur_name=incident.op2_operateur.username if incident.op2_operateur else '',
-                    op2_date=incident.op2_date,
-                    nom_op3=incident.nom_op3,
-                    op3_checked=incident.op3_checked,
-                    op3_comment=incident.op3_comment,
-                    op3_operateur_name=incident.op3_operateur.username if incident.op3_operateur else '',
-                    op3_date=incident.op3_date,
-                )
-                incident.actif = False
-                incident.date_fin = timezone.now()
-                incident.last_increment = None
-                incident.save()
-
-        return JsonResponse({
-            'success': True,
-            'message': 'Données enregistrées avec succès',
-            'id': dht_entry.id,
-            'temperature': temperature,
-            'humidity': humidity
-        })
-
-    except ValueError:
-        return JsonResponse({'success': False, 'error': 'Valeurs invalides'}, status=400)
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
-
-
-# ==================== ARCHIVE ====================
+# ==================== ARCHIVE - FIXED ====================
 
 @login_required
 def archive_incidents(request):
-    """Page archive des incidents - includes both active and archived"""
-    # Get all archived incidents
-    archived = ArchiveIncident.objects.all().order_by('-date_debut')
+    """Page archive - FIXED to show ALL past incidents"""
+    try:
+        # Get ALL closed incidents from both tables
+        closed_incidents = Incident.objects.filter(actif=False).order_by('-date_debut')
+        archived_incidents = ArchiveIncident.objects.all().order_by('-date_debut')
 
-    # Get all closed (inactive) incidents from the main Incident table
-    closed_incidents = Incident.objects.filter(actif=False).order_by('-date_debut')
+        # Combine into single list
+        all_archives = list(closed_incidents) + list(archived_incidents)
 
-    # Combine both lists
-    all_archives = list(archived) + list(closed_incidents)
+        # Sort by date
+        all_archives.sort(key=lambda x: x.date_debut, reverse=True)
 
-    # Sort by date_debut descending
-    all_archives.sort(key=lambda x: x.date_debut, reverse=True)
+        print(
+            f"📦 Archive page: Found {len(all_archives)} total incidents ({len(closed_incidents)} closed, {len(archived_incidents)} archived)")
 
-    return render(request, 'archives_incidents.html', {'archives': all_archives})
+        return render(request, 'archives_incidents.html', {'archives': all_archives})
+    except Exception as e:
+        print(f"❌ Error in archive_incidents: {e}")
+        import traceback
+        traceback.print_exc()
+        return render(request, 'archives_incidents.html', {'archives': [], 'error': str(e)})
+
 
 @login_required
 def archive_incident_detail(request, incident_id):
-    """Page détail d'un incident archivé"""
+    """Page détail - FIXED"""
     try:
-        incident = ArchiveIncident.objects.get(id=incident_id)
-    except ArchiveIncident.DoesNotExist:
-        messages.error(request, 'Incident non trouvé')
-        return redirect('archive_incidents')
+        # Try Archive first
+        incident = ArchiveIncident.objects.filter(id=incident_id).first()
 
-    return render(request, 'archive_incident_detail.html', {'incident': incident})
+        # If not found, try closed Incidents
+        if not incident:
+            incident = Incident.objects.filter(id=incident_id).first()
+
+        if not incident:
+            messages.error(request, 'Incident non trouvé')
+            return redirect('archive_incidents')
+
+        return render(request, 'archive_incident_detail.html', {'incident': incident})
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        messages.error(request, f'Erreur: {str(e)}')
+        return redirect('archive_incidents')
 
 
 # ==================== DOWNLOAD/EXPORT ====================
@@ -596,15 +631,15 @@ def download_csv(request):
 
 
 def download_incidents_excel(request):
-    """Téléchargement Excel des incidents"""
+    """Téléchargement Excel"""
     wb = Workbook()
     ws = wb.active
     ws.title = "Incidents DHT11"
 
+    # Styles
     header_font = Font(bold=True, color="FFFFFF", size=12)
     header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
     header_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
-
     border = Border(
         left=Side(style='thin'),
         right=Side(style='thin'),
@@ -645,16 +680,11 @@ def download_incidents_excel(request):
         ws.cell(row=row_num, column=4).value = incident.compteur
         ws.cell(row=row_num, column=5).value = statut
 
-        op1_cell = ws.cell(row=row_num, column=6)
-        op1_cell.value = '✓' if incident.op1_checked else '✗'
+        ws.cell(row=row_num, column=6).value = '✓' if incident.op1_checked else '✗'
         ws.cell(row=row_num, column=7).value = incident.op1_comment or ''
-
-        op2_cell = ws.cell(row=row_num, column=8)
-        op2_cell.value = '✓' if incident.op2_checked else '✗'
+        ws.cell(row=row_num, column=8).value = '✓' if incident.op2_checked else '✗'
         ws.cell(row=row_num, column=9).value = incident.op2_comment or ''
-
-        op3_cell = ws.cell(row=row_num, column=10)
-        op3_cell.value = '✓' if incident.op3_checked else '✗'
+        ws.cell(row=row_num, column=10).value = '✓' if incident.op3_checked else '✗'
         ws.cell(row=row_num, column=11).value = incident.op3_comment or ''
 
         for col in range(1, 12):
@@ -670,11 +700,10 @@ def download_incidents_excel(request):
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
     response[
-        'Content-Disposition'] = f'attachment; filename="incidents_dht11_{datetime.datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx"'
+        'Content-Disposition'] = f'attachment; filename="incidents_{datetime.datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx"'
 
     wb.save(response)
     return response
-
 
 # ==================== ADMIN PANEL ====================
 
@@ -715,38 +744,46 @@ def admin_panel(request):
             messages.error(request, f'Erreur: {str(e)}')
 
         return redirect('admin_panel')
-
     elif action == 'update_thresholds' and request.method == 'POST':
         try:
-            min_temp = float(request.POST.get('min_temp', 2.0))
-            max_temp = float(request.POST.get('max_temp', 8.0))
+            min_temp = float(request.POST.get('min_temp'))
+            max_temp = float(request.POST.get('max_temp'))
 
-            threshold, created = TemperatureThreshold.objects.get_or_create(
-                defaults={'min_temp': min_temp, 'max_temp': max_temp}
-            )
-            if not created:
-                threshold.min_temp = min_temp
-                threshold.max_temp = max_temp
-                threshold.updated_by = request.user
-                threshold.save()
-
-            messages.success(request, 'Seuils mis à jour')
+            if min_temp >= max_temp:
+                messages.error(request, 'La température minimum doit être inférieure à la maximum')
+            else:
+                threshold = TemperatureThreshold.objects.first()
+                if threshold:
+                    threshold.min_temp = min_temp
+                    threshold.max_temp = max_temp
+                    threshold.updated_by = request.user
+                    threshold.save()
+                    messages.success(request, 'Seuils mis à jour avec succès')
+                else:
+                    TemperatureThreshold.objects.create(
+                        min_temp=min_temp,
+                        max_temp=max_temp,
+                        updated_by=request.user
+                    )
+                    messages.success(request, 'Seuils créés avec succès')
 
         except Exception as e:
             messages.error(request, f'Erreur: {str(e)}')
 
         return redirect('admin_panel')
 
-    operateurs = UserProfile.objects.exclude(role='admin').select_related('user')
+        # Get data for template
+    operateurs = UserProfile.objects.all().order_by('user__username')
     threshold = TemperatureThreshold.objects.first()
     if not threshold:
-        threshold = TemperatureThreshold.objects.create(min_temp=2.0, max_temp=8.0)
+        threshold = TemperatureThreshold.objects.create(min_temp=2.0, max_temp=8.0, updated_by=request.user)
+
+    ROLE_CHOICES = UserProfile.ROLE_CHOICES
 
     context = {
         'operateurs': operateurs,
         'threshold': threshold,
-        'action': action,
-        'ROLE_CHOICES': UserProfile.ROLE_CHOICES
+        'ROLE_CHOICES': ROLE_CHOICES,
     }
 
-    return render(request, 'admin/admin_panel.html', context)
+    return render(request, 'admin_panel.html', context)

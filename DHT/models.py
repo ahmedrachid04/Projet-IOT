@@ -1,6 +1,8 @@
 from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import User
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 
 class Dht11(models.Model):
@@ -153,3 +155,32 @@ class ArchiveIncident(models.Model):
 
     def __str__(self):
         return f"Archived Incident {self.id} - {self.date_debut}"
+
+
+@receiver(post_save, sender=Dht11)
+def check_temperature_threshold(sender, instance, created, **kwargs):
+    """Vérifie les seuils de température après l'enregistrement d'une nouvelle mesure"""
+    if created:  # Seulement pour les nouvelles mesures
+        threshold = TemperatureThreshold.objects.first()
+        if threshold:
+            if instance.temp < threshold.min_temp or instance.temp > threshold.max_temp:
+                # Température hors seuil
+                active_incident = Incident.objects.filter(actif=True).first()
+                if active_incident:
+                    # Incrémenter le compteur de l'incident actif
+                    active_incident.compteur += 1
+                    active_incident.save()
+                else:
+                    # Créer un nouvel incident
+                    Incident.objects.create(
+                        temperature=instance.temp,
+                        humidity=instance.hum,
+                        compteur=1
+                    )
+            else:
+                # Température dans les seuils, fermer l'incident actif s'il existe
+                active_incident = Incident.objects.filter(actif=True).first()
+                if active_incident:
+                    active_incident.actif = False
+                    active_incident.date_fin = timezone.now()
+                    active_incident.save()

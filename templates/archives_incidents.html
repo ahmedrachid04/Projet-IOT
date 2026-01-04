@@ -13,7 +13,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
             color: #e0e0e0;
             min-height: 100vh;
             padding: 20px;
@@ -22,26 +22,27 @@
         .container {
             max-width: 1400px;
             margin: 0 auto;
+            background: #2a2a2a;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            border: 1px solid #3a3a3a;
         }
 
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 2rem;
-            flex-wrap: wrap;
-            gap: 1rem;
+            margin-bottom: 30px;
         }
 
         h1 {
-            font-size: 2.5rem;
             color: #fff;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
+            font-size: 2.5rem;
         }
 
-        .btn-back {
+        .back-btn {
+            display: inline-block;
             padding: 12px 24px;
             background: #444;
             color: #fff;
@@ -52,128 +53,29 @@
             font-weight: 600;
         }
 
-        .btn-back:hover {
+        .back-btn:hover {
             background: #555;
             transform: translateY(-2px);
         }
 
-        .stats-bar {
-            background: #2a2a2a;
-            padding: 1.5rem;
-            border-radius: 12px;
-            margin-bottom: 2rem;
-            display: flex;
-            justify-content: space-around;
-            flex-wrap: wrap;
-            gap: 2rem;
-            border: 1px solid #3a3a3a;
-        }
-
-        .stat-item {
-            text-align: center;
-        }
-
-        .stat-value {
-            font-size: 2.5rem;
-            font-weight: bold;
-            color: #4ade80;
-        }
-
-        .stat-label {
-            color: #888;
-            margin-top: 0.5rem;
-            font-size: 0.9rem;
-        }
-
-        .filters {
-            background: #2a2a2a;
-            padding: 1.5rem;
-            border-radius: 12px;
-            margin-bottom: 2rem;
-            border: 1px solid #3a3a3a;
-        }
-
-        .filter-row {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        .filter-group {
-            flex: 1;
-            min-width: 200px;
-        }
-
-        .filter-group label {
-            display: block;
-            color: #b0b0b0;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-        }
-
-        .filter-group input,
-        .filter-group select {
-            width: 100%;
-            padding: 10px;
-            background: #1a1a1a;
-            border: 1px solid #3a3a3a;
-            border-radius: 6px;
-            color: #e0e0e0;
-            font-size: 1rem;
-        }
-
-        .filter-group input:focus,
-        .filter-group select:focus {
-            outline: none;
-            border-color: #666;
-        }
-
-        .table-container {
-            background: #2a2a2a;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            border: 1px solid #3a3a3a;
-        }
-
         table {
             width: 100%;
+            background: #1f1f1f;
+            border-radius: 12px;
+            overflow: hidden;
             border-collapse: collapse;
         }
 
         thead {
-            background: #1a1a1a;
+            background: #333;
         }
 
         th {
-            padding: 1rem;
+            padding: 15px;
             text-align: left;
             font-weight: 600;
             color: #fff;
-            border-bottom: 2px solid #3a3a3a;
-            cursor: pointer;
-            user-select: none;
-            position: relative;
-        }
-
-        th:hover {
-            background: #222;
-        }
-
-        th.sortable::after {
-            content: ' ⇅';
-            opacity: 0.3;
-        }
-
-        th.sort-asc::after {
-            content: ' ▲';
-            opacity: 1;
-        }
-
-        th.sort-desc::after {
-            content: ' ▼';
-            opacity: 1;
+            border-bottom: 2px solid #444;
         }
 
         tbody tr {
@@ -182,11 +84,11 @@
         }
 
         tbody tr:hover {
-            background: #333;
+            background: #2a2a2a;
         }
 
         td {
-            padding: 1rem;
+            padding: 15px;
             color: #e0e0e0;
         }
 
@@ -204,110 +106,43 @@
 
         .status-badge {
             display: inline-block;
-            padding: 6px 12px;
-            border-radius: 20px;
+            padding: 4px 12px;
+            border-radius: 12px;
             font-size: 0.85rem;
             font-weight: 600;
         }
 
-        .status-en-cours {
-            background: #4d1a1a;
-            color: #f87171;
-        }
-
         .status-termine {
-            background: #1a4d2e;
-            color: #4ade80;
-        }
-
-        .operations-cell {
-            font-size: 0.9rem;
-        }
-
-        .operation-item {
-            margin-bottom: 4px;
-        }
-
-        .operation-check {
-            margin-right: 4px;
+            background: #2ecc71;
+            color: #fff;
         }
 
         .no-data {
             text-align: center;
-            padding: 3rem;
+            padding: 40px;
             color: #888;
+            font-size: 1.1rem;
+        }
+
+        .op-status {
             font-size: 1.2rem;
         }
 
-        .pagination {
-            display: flex;
-            justify-content: center;
-            gap: 0.5rem;
-            margin-top: 2rem;
-            flex-wrap: wrap;
-        }
-
-        .page-btn {
-            padding: 8px 16px;
-            background: #3a3a3a;
-            color: #e0e0e0;
-            border: 1px solid #4a4a4a;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .page-btn:hover {
-            background: #4a4a4a;
-        }
-
-        .page-btn.active {
-            background: #4a9eff;
-            border-color: #4a9eff;
-            color: #fff;
-        }
-
-        .page-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .export-btn {
-            padding: 12px 24px;
-            background: #27ae60;
-            color: #fff;
-            text-decoration: none;
-            border-radius: 8px;
-            border: none;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s;
-        }
-
-        .export-btn:hover {
-            background: #229954;
-            transform: translateY(-2px);
-        }
-
         @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
             h1 {
                 font-size: 1.8rem;
             }
 
-            .table-container {
-                overflow-x: auto;
-            }
-
             table {
-                min-width: 800px;
+                font-size: 0.9rem;
             }
 
-            .stats-bar {
-                gap: 1rem;
-            }
-
-            .stat-value {
-                font-size: 1.8rem;
+            th, td {
+                padding: 10px;
             }
         }
     </style>
@@ -316,369 +151,59 @@
     <div class="container">
         <div class="header">
             <h1>📂 Archive des Incidents</h1>
-            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                <a href="/download_incidents_excel/" class="export-btn">💾 Exporter Excel</a>
-                <a href="/" class="btn-back">← Retour Dashboard</a>
-            </div>
+            <a href="/" class="back-btn">← Retour Dashboard</a>
         </div>
 
-        <!-- Statistics Bar -->
-        <div class="stats-bar">
-            <div class="stat-item">
-                <div class="stat-value" id="total-count">{{ archives|length }}</div>
-                <div class="stat-label">Total Incidents</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-value" id="termine-count">
-                    {% for archive in archives %}{% if archive.status == 'termine' %}1{% endif %}{% endfor %}
-                </div>
-                <div class="stat-label">Terminés</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-value" id="en-cours-count">
-                    {% for archive in archives %}{% if archive.status == 'en_cours' %}1{% endif %}{% endfor %}
-                </div>
-                <div class="stat-label">En Cours</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-value" id="visible-count">{{ archives|length }}</div>
-                <div class="stat-label">Affichés</div>
-            </div>
-        </div>
-
-        <!-- Filters -->
-        <div class="filters">
-            <div class="filter-row">
-                <div class="filter-group">
-                    <label>🔍 Rechercher</label>
-                    <input type="text" id="searchInput" placeholder="ID, commentaire...">
-                </div>
-                <div class="filter-group">
-                    <label>📊 Statut</label>
-                    <select id="statusFilter">
-                        <option value="">Tous</option>
-                        <option value="en_cours">En cours</option>
-                        <option value="termine">Terminé</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label>📅 Date Début</label>
-                    <input type="date" id="dateStartFilter">
-                </div>
-                <div class="filter-group">
-                    <label>📅 Date Fin</label>
-                    <input type="date" id="dateEndFilter">
-                </div>
-            </div>
-        </div>
-
-        <!-- Table -->
-        <div class="table-container">
-            {% if archives %}
-            <table id="incidentsTable">
-                <thead>
-                    <tr>
-                        <th class="sortable" data-sort="id">ID</th>
-                        <th class="sortable" data-sort="date_debut">Date Début</th>
-                        <th class="sortable" data-sort="date_fin">Date Fin</th>
-                        <th class="sortable" data-sort="compteur">Compteur</th>
-                        <th class="sortable" data-sort="status">Statut</th>
-                        <th>Température</th>
-                        <th>Humidité</th>
-                        <th>Opérations</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for archive in archives %}
-                    <tr data-status="{{ archive.status }}"
-                        data-date-debut="{{ archive.date_debut|date:'Y-m-d' }}"
-                        data-date-fin="{% if archive.date_fin %}{{ archive.date_fin|date:'Y-m-d' }}{% endif %}">
-                        <td>
-                            <a href="{% url 'archive_incident_detail' incident_id=archive.id %}" class="incident-link">
-                                #{{ archive.id }}
-                            </a>
-                        </td>
-                        <td>{{ archive.date_debut|date:"d/m/Y H:i" }}</td>
-                        <td>
-                            {% if archive.date_fin %}
-                                {{ archive.date_fin|date:"d/m/Y H:i" }}
-                            {% else %}
-                                <span style="color: #888;">-</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ archive.compteur }}</td>
-                        <td>
-                            <span class="status-badge status-{{ archive.status }}">
-                                {% if archive.status == 'en_cours' %}
-                                    🔄 En cours
-                                {% else %}
-                                    ✅ Terminé
-                                {% endif %}
-                            </span>
-                        </td>
-                        <td>
-                            {% if archive.temperature %}
-                                {{ archive.temperature|floatformat:1 }}°C
-                            {% else %}
-                                <span style="color: #888;">-</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if archive.humidity %}
-                                {{ archive.humidity|floatformat:1 }}%
-                            {% else %}
-                                <span style="color: #888;">-</span>
-                            {% endif %}
-                        </td>
-                        <td class="operations-cell">
-                            <div class="operation-item">
-                                <span class="operation-check">
-                                    {% if archive.op1_checked %}✅{% else %}❌{% endif %}
-                                </span>
-                                Op1
-                                {% if archive.op1_operateur_name %}
-                                    <span style="color: #888; font-size: 0.85rem;">({{ archive.op1_operateur_name }})</span>
-                                {% endif %}
-                            </div>
-                            <div class="operation-item">
-                                <span class="operation-check">
-                                    {% if archive.op2_checked %}✅{% else %}❌{% endif %}
-                                </span>
-                                Op2
-                                {% if archive.op2_operateur_name %}
-                                    <span style="color: #888; font-size: 0.85rem;">({{ archive.op2_operateur_name }})</span>
-                                {% endif %}
-                            </div>
-                            <div class="operation-item">
-                                <span class="operation-check">
-                                    {% if archive.op3_checked %}✅{% else %}❌{% endif %}
-                                </span>
-                                Op3
-                                {% if archive.op3_operateur_name %}
-                                    <span style="color: #888; font-size: 0.85rem;">({{ archive.op3_operateur_name }})</span>
-                                {% endif %}
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            {% else %}
-            <div class="no-data">
-                📭 Aucun incident archivé
-            </div>
-            {% endif %}
-        </div>
-
-        <!-- Pagination -->
-        <div class="pagination" id="pagination"></div>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Date Début</th>
+                    <th>Date Fin</th>
+                    <th>Compteur</th>
+                    <th>Température</th>
+                    <th>Humidité</th>
+                    <th>Statut</th>
+                    <th>Op1</th>
+                    <th>Op2</th>
+                    <th>Op3</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for archive in archives %}
+                <tr>
+                    <td>
+                        <a href="{% url 'archive_incident_detail' incident_id=archive.id %}" class="incident-link">
+                            #{{ archive.id }}
+                        </a>
+                    </td>
+                    <td>{{ archive.date_debut|date:"d/m/Y H:i" }}</td>
+                    <td>{{ archive.date_fin|date:"d/m/Y H:i" }}</td>
+                    <td><strong>{{ archive.compteur }}</strong></td>
+                    <td>{{ archive.temperature|floatformat:1 }}°C</td>
+                    <td>{{ archive.humidity|floatformat:1 }}%</td>
+                    <td>
+                        <span class="status-badge status-termine">Terminé</span>
+                    </td>
+                    <td class="op-status">
+                        {% if archive.op1_checked %}✅{% else %}❌{% endif %}
+                    </td>
+                    <td class="op-status">
+                        {% if archive.op2_checked %}✅{% else %}❌{% endif %}
+                    </td>
+                    <td class="op-status">
+                        {% if archive.op3_checked %}✅{% else %}❌{% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="10" class="no-data">
+                        📭 Aucun incident archivé pour le moment
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-
-    <script>
-        // Table sorting and filtering
-        let sortColumn = null;
-        let sortDirection = 'asc';
-        const rowsPerPage = 20;
-        let currentPage = 1;
-        let filteredRows = [];
-
-        // Get all table rows
-        const tbody = document.querySelector('tbody');
-        const allRows = tbody ? Array.from(tbody.querySelectorAll('tr')) : [];
-
-        // Initialize
-        function init() {
-            filteredRows = allRows;
-            updateStats();
-            renderTable();
-            setupEventListeners();
-        }
-
-        // Setup event listeners
-        function setupEventListeners() {
-            // Search
-            document.getElementById('searchInput').addEventListener('input', filterTable);
-            document.getElementById('statusFilter').addEventListener('change', filterTable);
-            document.getElementById('dateStartFilter').addEventListener('change', filterTable);
-            document.getElementById('dateEndFilter').addEventListener('change', filterTable);
-
-            // Sorting
-            document.querySelectorAll('th.sortable').forEach(th => {
-                th.addEventListener('click', () => {
-                    const column = th.dataset.sort;
-                    if (sortColumn === column) {
-                        sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-                    } else {
-                        sortColumn = column;
-                        sortDirection = 'asc';
-                    }
-                    sortTable();
-                    updateSortIndicators();
-                });
-            });
-        }
-
-        // Filter table
-        function filterTable() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const statusFilter = document.getElementById('statusFilter').value;
-            const dateStart = document.getElementById('dateStartFilter').value;
-            const dateEnd = document.getElementById('dateEndFilter').value;
-
-            filteredRows = allRows.filter(row => {
-                const text = row.textContent.toLowerCase();
-                const status = row.dataset.status;
-                const dateDebut = row.dataset.dateDebut;
-                const dateFin = row.dataset.dateFin;
-
-                // Search filter
-                if (searchTerm && !text.includes(searchTerm)) {
-                    return false;
-                }
-
-                // Status filter
-                if (statusFilter && status !== statusFilter) {
-                    return false;
-                }
-
-                // Date filters
-                if (dateStart && dateDebut < dateStart) {
-                    return false;
-                }
-
-                if (dateEnd && dateFin && dateFin > dateEnd) {
-                    return false;
-                }
-
-                return true;
-            });
-
-            currentPage = 1;
-            updateStats();
-            renderTable();
-        }
-
-        // Sort table
-        function sortTable() {
-            filteredRows.sort((a, b) => {
-                let aVal, bVal;
-
-                if (sortColumn === 'id') {
-                    aVal = parseInt(a.querySelector('td:nth-child(1)').textContent.replace('#', ''));
-                    bVal = parseInt(b.querySelector('td:nth-child(1)').textContent.replace('#', ''));
-                } else if (sortColumn === 'compteur') {
-                    aVal = parseInt(a.querySelector('td:nth-child(4)').textContent);
-                    bVal = parseInt(b.querySelector('td:nth-child(4)').textContent);
-                } else if (sortColumn === 'date_debut') {
-                    aVal = new Date(a.dataset.dateDebut);
-                    bVal = new Date(b.dataset.dateDebut);
-                } else if (sortColumn === 'date_fin') {
-                    aVal = a.dataset.dateFin ? new Date(a.dataset.dateFin) : new Date(0);
-                    bVal = b.dataset.dateFin ? new Date(b.dataset.dateFin) : new Date(0);
-                } else if (sortColumn === 'status') {
-                    aVal = a.dataset.status;
-                    bVal = b.dataset.status;
-                }
-
-                if (sortDirection === 'asc') {
-                    return aVal > bVal ? 1 : -1;
-                } else {
-                    return aVal < bVal ? 1 : -1;
-                }
-            });
-
-            renderTable();
-        }
-
-        // Update sort indicators
-        function updateSortIndicators() {
-            document.querySelectorAll('th.sortable').forEach(th => {
-                th.classList.remove('sort-asc', 'sort-desc');
-                if (th.dataset.sort === sortColumn) {
-                    th.classList.add(sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
-                }
-            });
-        }
-
-        // Render table with pagination
-        function renderTable() {
-            if (!tbody) return;
-
-            // Clear tbody
-            tbody.innerHTML = '';
-
-            // Calculate pagination
-            const start = (currentPage - 1) * rowsPerPage;
-            const end = start + rowsPerPage;
-            const pageRows = filteredRows.slice(start, end);
-
-            // Add rows
-            pageRows.forEach(row => tbody.appendChild(row.cloneNode(true)));
-
-            // Render pagination
-            renderPagination();
-        }
-
-        // Render pagination
-        function renderPagination() {
-            const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
-            const paginationEl = document.getElementById('pagination');
-            paginationEl.innerHTML = '';
-
-            if (totalPages <= 1) return;
-
-            // Previous button
-            const prevBtn = document.createElement('button');
-            prevBtn.textContent = '← Précédent';
-            prevBtn.className = 'page-btn';
-            prevBtn.disabled = currentPage === 1;
-            prevBtn.addEventListener('click', () => {
-                currentPage--;
-                renderTable();
-            });
-            paginationEl.appendChild(prevBtn);
-
-            // Page numbers
-            for (let i = 1; i <= totalPages; i++) {
-                if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
-                    const pageBtn = document.createElement('button');
-                    pageBtn.textContent = i;
-                    pageBtn.className = 'page-btn' + (i === currentPage ? ' active' : '');
-                    pageBtn.addEventListener('click', () => {
-                        currentPage = i;
-                        renderTable();
-                    });
-                    paginationEl.appendChild(pageBtn);
-                } else if (i === currentPage - 3 || i === currentPage + 3) {
-                    const dots = document.createElement('span');
-                    dots.textContent = '...';
-                    dots.style.padding = '8px';
-                    dots.style.color = '#888';
-                    paginationEl.appendChild(dots);
-                }
-            }
-
-            // Next button
-            const nextBtn = document.createElement('button');
-            nextBtn.textContent = 'Suivant →';
-            nextBtn.className = 'page-btn';
-            nextBtn.disabled = currentPage === totalPages;
-            nextBtn.addEventListener('click', () => {
-                currentPage++;
-                renderTable();
-            });
-            paginationEl.appendChild(nextBtn);
-        }
-
-        // Update statistics
-        function updateStats() {
-            document.getElementById('visible-count').textContent = filteredRows.length;
-        }
-
-        // Initialize on load
-        if (tbody) {
-            init();
-        }
-    </script>
 </body>
 </html>

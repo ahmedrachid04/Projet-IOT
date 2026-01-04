@@ -1,274 +1,407 @@
-{% extends 'base.html' %}
-{% load static %}
-
-{% block title %}Administration{% endblock %}
-
-{% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-md-12">
-            <h2 class="mb-4">Panneau d'Administration</h2>
-
-            <!-- Navigation Tabs -->
-            <ul class="nav nav-tabs" id="adminTabs" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard" type="button" role="tab">Tableau de Bord</button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="operateurs-tab" data-bs-toggle="tab" data-bs-target="#operateurs" type="button" role="tab">Gestion Opérateurs</button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="thresholds-tab" data-bs-toggle="tab" data-bs-target="#thresholds" type="button" role="tab">Seuils Température</button>
-                </li>
-            </ul>
-
-            <div class="tab-content" id="adminTabContent">
-                <!-- Dashboard Tab -->
-                <div class="tab-pane fade show active" id="dashboard" role="tabpanel">
-                    <div class="card mt-3">
-                        <div class="card-header">
-                            <h5>Statistiques</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <div class="card bg-primary text-white">
-                                        <div class="card-body">
-                                            <h5>{{ operateurs|length }}</h5>
-                                            <p>Opérateurs actifs</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="card bg-success text-white">
-                                        <div class="card-body">
-                                            <h5>{{ threshold.min_temp }}°C - {{ threshold.max_temp }}°C</h5>
-                                            <p>Seuils température</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="card bg-warning text-white">
-                                        <div class="card-body">
-                                            <h5>0</h5>
-                                            <p>Incidents actifs</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Opérateurs Tab -->
-                <div class="tab-pane fade" id="operateurs" role="tabpanel">
-                    <div class="card mt-3">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <h5>Gestion des Opérateurs</h5>
-                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createOperateurModal">
-                                <i class="fas fa-plus"></i> Nouveau Opérateur
-                            </button>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-striped">
-                                    <thead>
-                                        <tr>
-                                            <th>Nom d'utilisateur</th>
-                                            <th>Nom complet</th>
-                                            <th>Rôle</th>
-                                            <th>Téléphone</th>
-                                            <th>Email</th>
-                                            <th>Statut</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for operateur in operateurs %}
-                                        <tr>
-                                            <td>{{ operateur.user.username }}</td>
-                                            <td>{{ operateur.full_name|default:"-" }}</td>
-                                            <td>
-                                                <span class="badge bg-{% if operateur.role == 'operateur1' %}primary{% elif operateur.role == 'operateur2' %}success{% else %}info{% endif %}">
-                                                    {{ operateur.get_role_display }}
-                                                </span>
-                                            </td>
-                                            <td>{{ operateur.phone_number|default:"-" }}</td>
-                                            <td>{{ operateur.email|default:"-" }}</td>
-                                            <td>
-                                                {% if operateur.user.is_active %}
-                                                    <span class="badge bg-success">Actif</span>
-                                                {% else %}
-                                                    <span class="badge bg-danger">Inactif</span>
-                                                {% endif %}
-                                            </td>
-                                            <td>
-                                                <button class="btn btn-sm btn-outline-primary" onclick="editOperateur({{ operateur.user.id }})">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                <button class="btn btn-sm btn-outline-danger" onclick="deleteOperateur({{ operateur.user.id }})">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Thresholds Tab -->
-                <div class="tab-pane fade" id="thresholds" role="tabpanel">
-                    <div class="card mt-3">
-                        <div class="card-header">
-                            <h5>Configuration des Seuils de Température</h5>
-                        </div>
-                        <div class="card-body">
-                            <form method="post" action="{% url 'admin_panel' %}?action=update_thresholds">
-                                {% csrf_token %}
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="min_temp" class="form-label">Température Minimale (°C)</label>
-                                            <input type="number" step="0.1" class="form-control" id="min_temp" name="min_temp"
-                                                   value="{{ threshold.min_temp }}" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="max_temp" class="form-label">Température Maximale (°C)</label>
-                                            <input type="number" step="0.1" class="form-control" id="max_temp" name="max_temp"
-                                                   value="{{ threshold.max_temp }}" required>
-                                        </div>
-                                    </div>
-                                </div>
-                                <button type="submit" class="btn btn-success">
-                                    <i class="fas fa-save"></i> Enregistrer
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Create Operateur Modal -->
-<div class="modal fade" id="createOperateurModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Créer un Nouvel Opérateur</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form method="post" action="{% url 'admin_panel' %}?action=create_operateur">
-                {% csrf_token %}
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="username" class="form-label">Nom d'utilisateur</label>
-                        <input type="text" class="form-control" id="username" name="username" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Mot de passe</label>
-                        <input type="password" class="form-control" id="password" name="password" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="email" class="form-label">Email</label>
-                        <input type="email" class="form-control" id="email" name="email">
-                    </div>
-                    <div class="mb-3">
-                        <label for="full_name" class="form-label">Nom complet</label>
-                        <input type="text" class="form-control" id="full_name" name="full_name">
-                    </div>
-                    <div class="mb-3">
-                        <label for="phone_number" class="form-label">Téléphone</label>
-                        <input type="text" class="form-control" id="phone_number" name="phone_number">
-                    </div>
-                    <div class="mb-3">
-                        <label for="role" class="form-label">Rôle</label>
-                        <select class="form-control" id="role" name="role" required>
-                            {% for role_value, role_display in ROLE_CHOICES %}
-                                {% if role_value != 'admin' %}
-                                <option value="{{ role_value }}">{{ role_display }}</option>
-                                {% endif %}
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                    <button type="submit" class="btn btn-primary">Créer</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<script>
-// JavaScript for admin panel functionality
-function editOperateur(userId) {
-    // TODO: Implement edit functionality
-    alert('Fonctionnalité d\'édition à implémenter');
-}
-
-function deleteOperateur(userId) {
-    if (confirm('Êtes-vous sûr de vouloir supprimer cet opérateur ?')) {
-        // TODO: Implement delete functionality
-        alert('Fonctionnalité de suppression à implémenter');
-    }
-}
-
-// Auto-select tab based on URL parameter
-document.addEventListener('DOMContentLoaded', function() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const action = urlParams.get('action');
-
-    if (action) {
-        const tabMap = {
-            'create_operateur': 'operateurs-tab',
-            'update_thresholds': 'thresholds-tab'
-        };
-
-        const tabId = tabMap[action];
-        if (tabId) {
-            const tab = document.getElementById(tabId);
-            const tabContent = document.querySelector(`#${tabId.replace('-tab', '')}`);
-
-            // Remove active class from all tabs
-            document.querySelectorAll('.nav-link').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-pane').forEach(t => t.classList.remove('show', 'active'));
-
-            // Add active class to target tab
-            tab.classList.add('active');
-            tabContent.classList.add('show', 'active');
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administration - DHT11 IoT</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-    }
-});
-</script>
 
-<style>
-.nav-tabs .nav-link {
-    border: 1px solid #dee2e6;
-    border-bottom: none;
-}
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
 
-.nav-tabs .nav-link.active {
-    background-color: #007bff;
-    color: white;
-    border-color: #007bff;
-}
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
 
-.tab-content {
-    border: 1px solid #dee2e6;
-    border-top: none;
-    padding: 20px;
-}
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
 
-.card {
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-</style>
-{% endblock %}
+        h1 {
+            color: #fff;
+            font-size: 2.5rem;
+        }
+
+        .back-btn {
+            padding: 12px 24px;
+            background: #444;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .back-btn:hover {
+            background: #555;
+            transform: translateY(-2px);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #3a3a3a;
+        }
+
+        .tab {
+            padding: 15px 30px;
+            background: #2a2a2a;
+            border: none;
+            color: #888;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .tab.active {
+            background: #3a3a3a;
+            color: #fff;
+        }
+
+        .tab-content {
+            display: none;
+            background: #2a2a2a;
+            padding: 30px;
+            border-radius: 12px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #b0b0b0;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            background: #1a1a1a;
+            border: 1px solid #3a3a3a;
+            border-radius: 6px;
+            color: #e0e0e0;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #666;
+        }
+
+        .btn-submit {
+            padding: 12px 30px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-submit:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        thead {
+            background: #333;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #3a3a3a;
+        }
+
+        th {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        tbody tr:hover {
+            background: #333;
+        }
+
+        .badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .badge-admin {
+            background: #e74c3c;
+            color: #fff;
+        }
+
+        .badge-operateur {
+            background: #3498db;
+            color: #fff;
+        }
+
+        .badge-visiteur {
+            background: #95a5a6;
+            color: #fff;
+        }
+
+        .messages {
+            margin-bottom: 20px;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .threshold-info {
+            background: #3a3a3a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .threshold-info h3 {
+            color: #4CAF50;
+            margin-bottom: 15px;
+        }
+
+        .threshold-display {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .threshold-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .threshold-label {
+            color: #888;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚙️ Panneau d'Administration</h1>
+            <a href="/" class="back-btn">← Retour Dashboard</a>
+        </div>
+
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('operateurs')">👥 Gestion Opérateurs</button>
+            <button class="tab" onclick="showTab('thresholds')">🌡️ Seuils de Température</button>
+        </div>
+
+        <!-- Operateurs Management Tab -->
+        <div id="operateurs" class="tab-content active">
+            <h2 style="margin-bottom: 20px;">Créer un nouvel opérateur</h2>
+
+            <form method="post" action="?action=create_operateur">
+                {% csrf_token %}
+
+                <div class="form-group">
+                    <label for="username">Nom d'utilisateur *</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Mot de passe *</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="full_name">Nom complet *</label>
+                    <input type="text" id="full_name" name="full_name" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email">
+                </div>
+
+                <div class="form-group">
+                    <label for="phone_number">Téléphone</label>
+                    <input type="tel" id="phone_number" name="phone_number">
+                </div>
+
+                <div class="form-group">
+                    <label for="role">Rôle *</label>
+                    <select id="role" name="role" required>
+                        <option value="">-- Sélectionner --</option>
+                        {% for role_value, role_label in ROLE_CHOICES %}
+                            {% if role_value != 'admin' %}
+                            <option value="{{ role_value }}">{{ role_label }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <button type="submit" class="btn-submit">✅ Créer Opérateur</button>
+            </form>
+
+            <h2 style="margin-top: 40px; margin-bottom: 20px;">Liste des opérateurs</h2>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Utilisateur</th>
+                        <th>Nom Complet</th>
+                        <th>Email</th>
+                        <th>Téléphone</th>
+                        <th>Rôle</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for operateur in operateurs %}
+                    <tr>
+                        <td><strong>{{ operateur.user.username }}</strong></td>
+                        <td>{{ operateur.full_name }}</td>
+                        <td>{{ operateur.email|default:"—" }}</td>
+                        <td>{{ operateur.phone_number|default:"—" }}</td>
+                        <td>
+                            {% if operateur.role == 'admin' %}
+                            <span class="badge badge-admin">Admin</span>
+                            {% elif operateur.role == 'visiteur' %}
+                            <span class="badge badge-visiteur">Visiteur</span>
+                            {% else %}
+                            <span class="badge badge-operateur">{{ operateur.get_role_display }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" style="text-align: center; color: #888;">Aucun opérateur</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Temperature Thresholds Tab -->
+        <div id="thresholds" class="tab-content">
+            <h2 style="margin-bottom: 20px;">Configuration des Seuils de Température</h2>
+
+            <div class="threshold-info">
+                <h3>📊 Seuils Actuels</h3>
+                <div class="threshold-display">
+                    <div>
+                        <div class="threshold-value">{{ threshold.min_temp }}°C</div>
+                        <div class="threshold-label">Température Minimum</div>
+                    </div>
+                    <div style="color: #666; font-size: 2rem;">—</div>
+                    <div>
+                        <div class="threshold-value">{{ threshold.max_temp }}°C</div>
+                        <div class="threshold-label">Température Maximum</div>
+                    </div>
+                </div>
+                <p style="margin-top: 15px; color: #888; font-size: 0.9rem;">
+                    ⚠️ Un incident sera déclenché si la température est <strong>en dehors</strong> de cette plage
+                    (< {{ threshold.min_temp }}°C ou > {{ threshold.max_temp }}°C)
+                </p>
+            </div>
+
+            <form method="post" action="?action=update_thresholds">
+                {% csrf_token %}
+
+                <div class="form-group">
+                    <label for="min_temp">Température Minimum (°C) *</label>
+                    <input type="number" id="min_temp" name="min_temp" step="0.1" value="{{ threshold.min_temp }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="max_temp">Température Maximum (°C) *</label>
+                    <input type="number" id="max_temp" name="max_temp" step="0.1" value="{{ threshold.max_temp }}" required>
+                </div>
+
+                <button type="submit" class="btn-submit">💾 Enregistrer les Seuils</button>
+            </form>
+
+            <div style="margin-top: 30px; padding: 20px; background: #3a3a3a; border-radius: 8px;">
+                <h3 style="color: #4CAF50; margin-bottom: 15px;">ℹ️ Information</h3>
+                <ul style="color: #b0b0b0; line-height: 1.8;">
+                    <li>Les seuils s'appliquent immédiatement à toutes les nouvelles mesures</li>
+                    <li>Les incidents existants ne sont pas affectés</li>
+                    <li>La dernière modification: {{ threshold.updated_at|date:"d/m/Y H:i" }}</li>
+                    {% if threshold.updated_by %}
+                    <li>Modifié par: {{ threshold.updated_by.username }}</li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            document.querySelectorAll('.tab').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>

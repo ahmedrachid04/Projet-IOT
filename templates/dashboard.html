@@ -47,34 +47,22 @@
                     </div>
 
                     <!-- Manual Entry Card -->
-<div class="live-card manual-entry-card">
-    <h3 class="live-label">📝 Entrée Manuelle</h3>
-    <div class="manual-entry-form">
-        <div class="input-group">
-            <label for="manual-temp">Température (°C):</label>
-            <input
-                type="number"
-                id="manual-temp"
-                step="0.1"
-                placeholder="Ex: 5.5"
-                autocomplete="off"
-            >
-            </div>
-                <div class="input-group">
-                <label for="manual-hum">Humidité (%):</label>
-                <input
-                    type="number"
-                    id="manual-hum"
-                    step="1"
-                    placeholder="Ex: 65.0"
-                    autocomplete="off"
-                >
-            </div>
-        <button onclick="submitManualData()" class="btn-submit-manual">
-            📤 Envoyer
-        </button>
-    </div>
-</div>
+                    <div class="live-card manual-entry-card">
+                        <h3 class="live-label">Simulation</h3>
+                        <div class="manual-entry-form">
+                            <div class="input-group">
+                                <label for="manual-temp">Température (°C):</label>
+                                <input type="text" id="manual-temp" placeholder="Ex: 5.5">
+                            </div>
+                            <div class="input-group">
+                                <label for="manual-hum">Humidité (%):</label>
+                                <input type="text" id="manual-hum" placeholder="Ex: 65.0">
+                            </div>
+                            <button onclick="submitManualData()" class="btn-submit-manual">
+                                📤 Envoyer
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -87,140 +75,128 @@
                 </div>
 
                 <div id="incident-details" class="incident-details-hidden">
-                <div class="incident-counter-box">
-                    <p class="incident-counter-text">
-                        <strong>Compteur d'incidents:</strong>
-                        <span id="incident-compteur" class="incident-compteur-value">0</span> / 9
-                    </p>
-                    <p class="incident-date-info">
-                        <strong>Date de début:</strong>
-                        <span id="incident-date-debut">--</span>
-                    </p>
-                </div>
-
-                <!-- Opération 1 -->
-                <div id="op1-container" class="operation-container op1-hidden">
-                    <h3>🔧 Opération Corrective 1</h3>
-                    <div class="operation-content">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="op1-check">
-                            Opération effectuée
-                        </label>
-                        <div class="comment-section">
-                            <label for="op1-comment">Commentaire obligatoire:</label>
-                            <textarea id="op1-comment" rows="2" placeholder="Décrivez l'opération effectuée..."></textarea>
+                    <div class="incident-counter-box">
+                        <p class="incident-counter-text">
+                            <strong>Compteur d'incidents:</strong>
+                            <span id="incident-compteur" class="incident-compteur-value">0</span> / 9
+                        </p>
+                        <p class="incident-date-info">
+                            <strong>Date de début:</strong>
+                            <span id="incident-date-debut">--</span>
+                        </p>
+                        <p class="incident-date-info">
+                            <strong>Température:</strong>
+                            <span id="incident-temperature">--</span>°C
+                        </p>
+                        <p class="incident-date-info">
+                            <strong>Humidité:</strong>
+                            <span id="incident-humidity">--</span>%
+                        </p>
+                    </div>
+                    <!-- Opération 1 -->
+                    <div id="op1-container" class="operation-container op1-hidden">
+                        <h3>🔧 Opération Corrective 1</h3>
+                        <div class="operation-content">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="op1-check">
+                                Opération effectuée
+                            </label>
+                            <div class="comment-section">
+                                <label for="op1-comment">Commentaire obligatoire:</label>
+                                <textarea id="op1-comment" rows="2" placeholder="Décrivez l'opération effectuée..."></textarea>
+                            </div>
+                            <button id="op1-btn" class="validate-btn" onclick="saveOperation(1)">
+                                ✓ Valider Opération 1
+                            </button>
                         </div>
-                        <button id="op1-btn" class="validate-btn" onclick="saveOperation(1)">
-                            ✓ Valider Opération 1
-                        </button>
+                    </div>
+
+                    <!-- Opération 2 -->
+                    <div id="op2-container" class="operation-container op2-hidden">
+                        <h3>🔧 Opération Corrective 2</h3>
+                        <div class="operation-content">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="op2-check">
+                                Opération effectuée
+                            </label>
+                            <div class="comment-section">
+                                <label for="op2-comment">Commentaire obligatoire:</label>
+                                <textarea id="op2-comment" rows="2" placeholder="Décrivez l'opération effectuée..."></textarea>
+                            </div>
+                            <button id="op2-btn" class="validate-btn" onclick="saveOperation(2)">
+                                ✓ Valider Opération 2
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Opération 3 -->
+                    <div id="op3-container" class="operation-container op3-hidden">
+                        <h3>🔧 Opération Corrective 3</h3>
+                        <div class="operation-content">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="op3-check">
+                                Opération effectuée
+                            </label>
+                            <div class="comment-section">
+                                <label for="op3-comment">Commentaire obligatoire:</label>
+                                <textarea id="op3-comment" rows="2" placeholder="Décrivez l'opération effectuée..."></textarea>
+                            </div>
+                            <button id="op3-btn" class="validate-btn" onclick="saveOperation(3)">
+                                ✓ Valider Opération 3
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Opération 2 -->
-                <div id="op2-container" class="operation-container op2-hidden">
-                    <h3>🔧 Opération Corrective 2</h3>
-                    <div class="operation-content">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="op2-check">
-                            Opération effectuée
-                        </label>
-                        <div class="comment-section">
-                            <label for="op2-comment">Commentaire obligatoire:</label>
-                            <textarea id="op2-comment" rows="2" placeholder="Décrivez l'opération effectuée..."></textarea>
-                        </div>
-                        <button id="op2-btn" class="validate-btn" onclick="saveOperation(2)">
-                            ✓ Valider Opération 2
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Opération 3 -->
-                <div id="op3-container" class="operation-container op3-hidden">
-                    <h3>🔧 Opération Corrective 3</h3>
-                    <div class="operation-content">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="op3-check">
-                            Opération effectuée
-                        </label>
-                        <div class="comment-section">
-                            <label for="op3-comment">Commentaire obligatoire:</label>
-                            <textarea id="op3-comment" rows="2" placeholder="Décrivez l'opération effectuée..."></textarea>
-                        </div>
-                        <button id="op3-btn" class="validate-btn" onclick="saveOperation(3)">
-                            ✓ Valider Opération 3
-                        </button>
-                    </div>
+                <div style="margin-top: 20px;">
+                    <a href="/archive-incidents/" class="btn-archive">
+                        📂 Voir Archive des Incidents
+                    </a>
                 </div>
             </div>
 
-            <div style="margin-top: 20px;">
-                <a href="/archive-incidents/" class="btn-archive">
-                    📂 Voir Archive des Incidents
-                </a>
+            <!-- Statistics -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-value" id="total-records">0</div>
+                    <div class="stat-label">Total Enregistrements</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">🌡️</div>
+                    <div class="stat-value" id="avg-temp">--</div>
+                    <div class="stat-label">Température Moyenne</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">💧</div>
+                    <div class="stat-value" id="avg-hum">--</div>
+                    <div class="stat-label">Humidité Moyenne</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">🔄</div>
+                    <div class="stat-value status-online" id="status">● En ligne</div>
+                    <div class="stat-label">État du Système</div>
+                </div>
             </div>
+
+            <!-- Action Buttons -->
+            <div class="actions">
+                <a href="/myChart/" class="btn-secondary">📈 Voir Graphiques</a>
+                <a href="/api/" class="btn-secondary" target="_blank">🔗 API Complète</a>
+                <a href="/download_csv/" class="btn-secondary">💾 Télécharger CSV</a>
+                <a href="/admin/" class="btn-secondary" target="_blank">⚙️ Administration</a>
+            </div>
+
+            <!-- Footer -->
+            <footer>
+                <p style="color: #888;">Système de monitoring DHT11 en ligne</p>
+            </footer>
         </div>
-
-        <!-- Statistics -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-icon">📊</div>
-                <div class="stat-value" id="total-records">0</div>
-                <div class="stat-label">Total Enregistrements</div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-icon">🌡️</div>
-                <div class="stat-value" id="avg-temp">--</div>
-                <div class="stat-label">Température Moyenne</div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-icon">💧</div>
-                <div class="stat-value" id="avg-hum">--</div>
-                <div class="stat-label">Humidité Moyenne</div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-icon">🔄</div>
-                <div class="stat-value status-online" id="status">● En ligne</div>
-                <div class="stat-label">État du Système</div>
-            </div>
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="actions">
-            <a href="/myChart/" class="btn-secondary">📈 Voir Graphiques</a>
-            <a href="/api/" class="btn-secondary" target="_blank">🔗 API Complète</a>
-            <a href="/download_csv/" class="btn-secondary">💾 Télécharger CSV</a>
-            <a href="/admin/" class="btn-secondary" target="_blank">⚙️ Administration</a>
-        </div>
-
-        <!-- Footer -->
-        <footer>
-            <p style="color: #888;">Système de monitoring DHT11 en ligne</p>
-        </footer>
     </div>
 
-    <script>
-        console.log('Page loaded, testing JavaScript...');
-        // Test if elements exist
-        setTimeout(() => {
-            const tempInput = document.getElementById('manual-temp');
-            const humInput = document.getElementById('manual-hum');
-            console.log('manual-temp element:', tempInput);
-            console.log('manual-hum element:', humInput);
-            if (tempInput) {
-                console.log('tempInput disabled:', tempInput.disabled);
-                console.log('tempInput readonly:', tempInput.readOnly);
-                // Force enable
-                tempInput.disabled = false;
-                tempInput.readOnly = false;
-                humInput.disabled = false;
-                humInput.readOnly = false;
-                console.log('Forced inputs to be enabled');
-            }
-        }, 1000);
-    </script>
     <script src="/static/js/dashboard.js"></script>
 </body>
 </html>
