@@ -12,11 +12,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        '''migrations.AddField(
-            model_name='incident',
-            name='humidity',
-            field=models.FloatField(blank=True, null=True),
-        ),'''
         migrations.AddField(
             model_name='incident',
             name='status',
