@@ -12,15 +12,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.CreateModel(
-            name='UserProfile',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('role', models.CharField(choices=[('admin', 'Admin'), ('operateur1', 'Operateur 1'), ('operateur2', 'Operateur 2'), ('operateur3', 'Operateur 3'), ('visiteur', 'Visiteur')], default='visiteur', max_length=20)),
-                ('full_name', models.CharField(blank=True, max_length=200)),
-                ('phone_number', models.CharField(blank=True, max_length=20)),
-                ('email', models.EmailField(blank=True, max_length=254)),
-                ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='profile', to=settings.AUTH_USER_MODEL)),
-            ],
-        ),
+       
     ]
