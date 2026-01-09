@@ -12,18 +12,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.CreateModel(
-            name='TemperatureThreshold',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('min_temp', models.FloatField(default=2.0)),
-                ('max_temp', models.FloatField(default=8.0)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('updated_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
-            ],
-            options={
-                'verbose_name': 'Seuil de Température',
-                'verbose_name_plural': 'Seuils de Température',
-            },
-        ),
+        
     ]
