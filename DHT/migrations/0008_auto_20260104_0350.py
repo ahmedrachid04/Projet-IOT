@@ -10,9 +10,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='archiveincident',
-            name='status',
-            field=models.CharField(choices=[('en_cours', 'En cours'), ('termine', 'Terminé')], default='termine', max_length=20),
-        ),
+        
     ]
