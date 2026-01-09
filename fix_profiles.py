@@ -1,85 +1,123 @@
 import os
+import sys
 import django
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'projet.settings')
+# Ensure Django settings are loaded
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "projet.settings")
 django.setup()
 
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from DHT.models import UserProfile
 
-print("🔧 Fixing user profiles...\n")
+User = get_user_model()
+
+print("Fixing users and profiles...\n")
 
 users_config = [
-    {'username': 'admin', 'role': 'admin', 'full_name': 'Administrateur'},
-    {'username': 'op1', 'role': 'operateur1', 'full_name': 'Opérateur 1'},
-    {'username': 'op2', 'role': 'operateur2', 'full_name': 'Opérateur 2'},
-    {'username': 'op3', 'role': 'operateur3', 'full_name': 'Opérateur 3'},
-    {'username': 'visiteur', 'role': 'visiteur', 'full_name': 'Visiteur'},
+    {"username": "admin", "role": "admin", "full_name": "Administrateur"},
+    {"username": "op1", "role": "operateur1", "full_name": "Opérateur 1"},
+    {"username": "op2", "role": "operateur2", "full_name": "Opérateur 2"},
+    {"username": "op3", "role": "operateur3", "full_name": "Opérateur 3"},
+    {"username": "visiteur", "role": "visiteur", "full_name": "Visiteur"},
 ]
 
+def set_password_if_needed(user, desired_password: str) -> bool:
+    """
+    Idempotent: only sets password if it doesn't match.
+    Returns True if changed.
+    """
+    if not user.check_password(desired_password):
+        user.set_password(desired_password)
+        user.save(update_fields=["password"])
+        return True
+    return False
+
+
 for config in users_config:
-    username = config['username']
+    username = config["username"]
+    role = config["role"]
+    full_name = config["full_name"]
 
-    try:
-        user = User.objects.get(username=username)
-        print(f"ℹ️  User '{username}' exists")
+    # Password policy: <username>123
+    desired_password = f"{username}123"
 
-        if config['role'] == 'admin':
+    user, created = User.objects.get_or_create(username=username)
+
+    if created:
+        user.set_password(desired_password)
+        # Admin gets staff/superuser
+        if role == "admin":
             user.is_staff = True
             user.is_superuser = True
-            user.save()
-            print(f"   ✅ Set admin permissions")
+        user.save()
+        print(f"Created user '{username}'")
+    else:
+        print(f"User '{username}' exists")
 
-    except User.DoesNotExist:
-        user = User.objects.create_user(username=username, password=f"{username}123")
+        # Ensure password is what we expect (optional but requested)
+        pwd_changed = set_password_if_needed(user, desired_password)
+        if pwd_changed:
+            print(f"  Set password to '{username}123'")
 
-        if config['role'] == 'admin':
-            user.is_staff = True
-            user.is_superuser = True
-            user.save()
+        if role == "admin":
+            changed = False
+            if not user.is_staff:
+                user.is_staff = True
+                changed = True
+            if not user.is_superuser:
+                user.is_superuser = True
+                changed = True
+            if changed:
+                user.save(update_fields=["is_staff", "is_superuser"])
+                print("  Ensured admin permissions (is_staff/is_superuser)")
 
-        print(f"✅ Created user '{username}'")
+    # Ensure profile exists and matches config
+    profile, p_created = UserProfile.objects.get_or_create(
+        user=user,
+        defaults={
+            "role": role,
+            "full_name": full_name,
+            "phone_number": "",
+        },
+    )
 
-    try:
-        profile = user.profile
-        print(f"   ℹ️  Profile exists with role: {profile.role}")
+    if p_created:
+        print(f"  Created profile (role={role})")
+    else:
+        updates = {}
+        if profile.role != role:
+            updates["role"] = role
+        # handle None safely
+        if (profile.full_name or "") != full_name:
+            updates["full_name"] = full_name
 
-        if profile.role != config['role']:
-            profile.role = config['role']
-            profile.full_name = config['full_name']
-            profile.save()
-            print(f"   ✅ Updated role to: {config['role']}")
-
-    except UserProfile.DoesNotExist:
-        profile = UserProfile.objects.create(
-            user=user,
-            role=config['role'],
-            full_name=config['full_name'],
-            email=f"{username}@example.com",
-            phone_number=''
-        )
-        print(f"   ✅ Created profile with role: {config['role']}")
+        if updates:
+            for k, v in updates.items():
+                setattr(profile, k, v)
+            profile.save(update_fields=list(updates.keys()))
+            print(f"  Updated profile: {', '.join(updates.keys())}")
+        else:
+            print(f"  Profile OK (role={profile.role})")
 
     print()
 
 print("=" * 60)
-print("📊 FINAL USER LIST:")
+print("FINAL USER LIST")
 print("=" * 60)
 
-for user in User.objects.all().order_by('username'):
-    if hasattr(user, 'profile'):
-        role = user.profile.role
-        status = "✅"
-    else:
-        role = "NO PROFILE"
-        status = "❌"
-
-    print(f"{status} {user.username:12} | Role: {role:15}")
+for u in User.objects.all().order_by("username"):
+    try:
+        r = u.profile.role
+        status = "OK"
+    except Exception:
+        r = "NO PROFILE"
+        status = "MISSING"
+    print(f"{status:7} {u.username:12} | role: {r}")
 
 print("=" * 60)
-print("\n🎉 Done! Login credentials:")
-print("   admin / admin123")
-print("   op1 / op1123")
-print("   op2 / op2123")
-print("   op3 / op3123")
-print("   visiteur / visit123")
+print("\nLogin credentials:")
+print("  admin    / admin123")
+print("  op1      / op1123")
+print("  op2      / op2123")
+print("  op3      / op3123")
+print("  visiteur / visiteur123")
