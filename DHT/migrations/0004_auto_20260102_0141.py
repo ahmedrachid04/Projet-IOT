@@ -12,29 +12,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='incident',
-            name='status',
-            field=models.CharField(choices=[('en_cours', 'En cours'), ('termine', 'Terminé')], default='en_cours', max_length=20),
-        ),
-        migrations.AddField(
-            model_name='incident',
-            name='temperature',
-            field=models.FloatField(blank=True, null=True),
-        ),
-        migrations.AddField(
-            model_name='incident',
-            name='op1_date',
-            field=models.DateTimeField(blank=True, null=True),
-        ),
-        migrations.AddField(
-            model_name='incident',
-            name='op2_date',
-            field=models.DateTimeField(blank=True, null=True),
-        ),
-        migrations.AddField(
-            model_name='incident',
-            name='op3_date',
-            field=models.DateTimeField(blank=True, null=True),
-        ),
+        
     ]
